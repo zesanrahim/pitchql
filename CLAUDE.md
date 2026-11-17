@@ -62,7 +62,11 @@ StatsBomb 360 frames only show players inside a `visible_area` polygon. Each can
 
 ## Data
 - StatsBomb open data: nested JSON events (~3,400 per match) plus 360 freeze frames
-- Metrica sample tracking data (25 Hz, 3 matches)
+- 25 Hz tracking source, **undecided between two options** (samples downloaded to `data/`, which is git-ignored):
+  - Metrica sample: 3 anonymised games ("Home"/"Away", no names or dates), positions only, CSV, small files. Pitch coordinates are normalised. No link to any StatsBomb match.
+  - IDSSE (DFL, Bassek et al. 2025, CC-BY 4.0, https://github.com/spoho-datascience/idsse-data, data at https://doi.org/10.6084/m9.figshare.28196177): 7 named Bundesliga and 2. Bundesliga matches, full in-stadium TRACAB tracking (all players visible), with speed and acceleration per frame, plus synced official events. XML, about 400 MB of tracking per match. Pitch is 105x68 with the origin at the centre. Loadable with kloppy. Program document calls it the default independent ground truth. Sample downloaded: 1. FC Köln v FC Bayern München, 2022/23 matchday 34 (events and match info in full, first 20 MB of tracking).
+- Coordinates differ across sources (StatsBomb 120x80, Metrica normalised, IDSSE 105x68 centred), and StatsBomb flips attacking direction between periods, so "left" must be defined relative to the attacking team's direction.
+- Neither tracking source has StatsBomb labels. Only events-based patterns (about 11 of 44) can be scored against labels. Tracking patterns are checked by hand on sampled matches.
 - Types: Event, Player, PlayerSet, Team, Role, Zone, Location, Instant, Interval, Possession, Frame
 
 ## Corpus rules
