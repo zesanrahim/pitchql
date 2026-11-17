@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PitchQL corpus",
+  "type": "object",
+  "required": ["version", "freeze_date", "patterns"],
+  "properties": {
+    "version": { "type": "string" },
+    "freeze_date": { "type": ["string", "null"], "format": "date", "description": "Date semantics and grammar freeze. Holdout entries may only be added after this." },
+    "patterns": { "type": "array", "items": { "$ref": "#/$defs/pattern" } }
+  },
+  "$defs": {
+    "pattern": {
+      "type": "object",
+      "required": ["id", "source", "verbatim", "paraphrase", "concept", "constructs", "data_model", "split"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^P[0-9]{2}$" },
+        "source": {
+          "type": "object",
+          "required": ["identifier", "type", "retrieved"],
+          "properties": {
+            "identifier": { "type": "string", "description": "Stable id: URL, DOI, or spec section." },
+            "type": { "enum": ["program_document", "provider_spec", "coaching_writing", "paper", "match_analysis"] },
+            "retrieved": { "type": "string", "format": "date" }
+          }
+        },
+        "verbatim": { "type": "string", "description": "Exact source sentence." },
+        "paraphrase": { "type": "string", "description": "Our canonical paraphrase." },
+        "concept": { "type": "string" },
+        "constructs": {
+          "type": "array",
+          "items": { "enum": ["event_predicate", "spatial_predicate", "kinematic_predicate", "sequence", "repetition", "negation", "time_window", "set_quantifier", "interval_predicate", "possession_scope", "nested_window", "partial_visibility"] }
+        },
+        "data_model": { "enum": ["events", "events_360", "tracking", "events_and_tracking"] },
+        "split": { "enum": ["design", "holdout"] },
+        "provider_label": { "type": ["string", "null"], "description": "StatsBomb flag usable as ground truth, if any." },
+        "notes": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,0 +1,937 @@
+{
+  "version": "0.1.0",
+  "freeze_date": null,
+  "patterns": [
+    {
+      "id": "P01",
+      "source": {
+        "identifier": "docs/Sports_Analytics_Program.pdf, Project 3 abstract and worked example (press-trap)",
+        "type": "program_document",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "opponent builds up on the left, our press forces a back-pass, and within eight seconds we regain possession in their half with at least three players ahead of the ball.",
+      "paraphrase": "The opponent starts a pass in their left build-up third. One or more presses by us follow. We regain the ball in the opponent's half within 8 seconds of the first pass, with at least 3 of our players ahead of the ball at the regain.",
+      "concept": "press-trap",
+      "constructs": [
+        "event_predicate",
+        "spatial_predicate",
+        "set_quantifier",
+        "sequence",
+        "repetition",
+        "time_window",
+        "partial_visibility"
+      ],
+      "data_model": "events_360",
+      "split": "design",
+      "provider_label": null,
+      "notes": "Required exit-criterion example. No provider flag, so checked by hand. Three ambiguities: which clock for 8 s, when 'ahead of the ball' is measured, what counts as 'regain'."
+    },
+    {
+      "id": "P02",
+      "source": {
+        "identifier": "docs/StatsBomb_Open_Data_Specification_v1.1.pdf, event attribute 'counterpress'",
+        "type": "provider_spec",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "Pressing actions within 5 seconds of an open play turnover.",
+      "paraphrase": "A defensive action (pressure, duel, block, interception, etc.) by the team that just lost the ball, occurring within 5 seconds of an open-play turnover.",
+      "concept": "counterpress",
+      "constructs": [
+        "event_predicate",
+        "sequence",
+        "time_window",
+        "possession_scope"
+      ],
+      "data_model": "events",
+      "split": "design",
+      "provider_label": "counterpress",
+      "notes": "Spec does not say which clock the 5 s uses, what counts as a turnover, or how simultaneous events are ordered."
+    },
+    {
+      "id": "P03",
+      "source": {
+        "identifier": "docs/StatsBomb_Open_Data_Specification_v1.1.pdf, play_pattern 6 'From Counter'",
+        "type": "provider_spec",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "The possession started with an open play turnover outside the counter-attacking team’s final third. The possession was at least 75% direct towards goal (as measured by our possession chain metrics). The counterattack travelled at least 18 yards towards goal.",
+      "paraphrase": "A possession that starts from an open-play turnover outside the team's attacking third, moves at least 75% directly toward goal, and advances at least 18 yards toward goal.",
+      "concept": "counterattack",
+      "constructs": [
+        "event_predicate",
+        "spatial_predicate",
+        "interval_predicate",
+        "possession_scope"
+      ],
+      "data_model": "events",
+      "split": "design",
+      "provider_label": "play_pattern = From Counter",
+      "notes": "Flag is derived by StatsBomb from this logic, not collected. 'Directness' depends on StatsBomb's possession chain metric, which the spec does not define, so we must choose our own definition."
+    },
+    {
+      "id": "P04",
+      "source": {
+        "identifier": "https://learning.coachesvoice.com/cv/in-focus-switching-play/ (section: What are some different ways to switch play? / The double switch)",
+        "type": "coaching_writing",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "A double switch involves a deliberate sequence of passes across the pitch, designed to shift the opposition before the decisive switch is made. The principle is to switch play twice in build-up, for example from full-back to full-back in a back four. Each pass should be made with a maximum of two touches to keep the tempo high enough, with the initial switch drawing their defensive block across.",
+      "paraphrase": "Two switches of play in one build-up, each pass using at most two touches, with the first switch pulling the defence across before the second.",
+      "concept": "double switch",
+      "constructs": [
+        "event_predicate",
+        "spatial_predicate",
+        "sequence",
+        "repetition",
+        "time_window"
+      ],
+      "data_model": "events_and_tracking",
+      "split": "design",
+      "provider_label": null,
+      "notes": "'Maximum of two touches' is not recorded in StatsBomb events, so it needs tracking data or an approximation. The source says 'should', so it is a description of intent, not a strict definition."
+    },
+    {
+      "id": "P05",
+      "source": {
+        "identifier": "https://learning.coachesvoice.com/cv/glossary-football-tactics-coaching/ (section: Low block)",
+        "type": "coaching_writing",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "A team defending in a low block positions their defensive line very close to their own goal – often inside their own penalty area – with little space left between their defensive and midfield units. Their most attacking players will only engage with an opponent who has the ball inside their own half.",
+      "paraphrase": "The defensive line sits near their own goal with a small gap to the midfield line. The most advanced players press only when the opponent has the ball in the defending team's own half.",
+      "concept": "low block",
+      "constructs": [
+        "kinematic_predicate",
+        "spatial_predicate",
+        "interval_predicate",
+        "negation",
+        "set_quantifier"
+      ],
+      "data_model": "tracking",
+      "split": "design",
+      "provider_label": null,
+      "notes": "'Only engage' is a universal condition over time (never engage otherwise). 'Very close' and 'little space' have no numbers."
+    },
+    {
+      "id": "P06",
+      "source": {
+        "identifier": "docs/StatsBomb_Open_Data_Specification_v1.1.pdf, play_pattern 2 'From Corner' (p.10)",
+        "type": "provider_spec",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "The event was part of the passage of play following a corner.",
+      "paraphrase": "Any event in the attacking passage of play that starts from a corner kick.",
+      "concept": "attack from a corner",
+      "constructs": [
+        "event_predicate",
+        "sequence",
+        "possession_scope",
+        "interval_predicate"
+      ],
+      "data_model": "events",
+      "split": "design",
+      "provider_label": "play_pattern = From Corner",
+      "notes": "The spec does not say when the 'passage of play' ends (first clearance? change of possession? a time limit?). The other restart play patterns share this structure and are entered as P41-P44."
+    },
+    {
+      "id": "P07",
+      "source": {
+        "identifier": "docs/StatsBomb_Open_Data_Specification_v1.1.pdf, Pass event attribute 'switch' (p.28)",
+        "type": "provider_spec",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "A switch is any pass that travels more than 40 yards of the width of the pitch.",
+      "paraphrase": "A pass whose sideways travel is more than 40 yards, which is half the 80-yard pitch width.",
+      "concept": "switch of play",
+      "constructs": [
+        "event_predicate",
+        "spatial_predicate"
+      ],
+      "data_model": "events",
+      "split": "design",
+      "provider_label": "switch",
+      "notes": "The same entry also says 'ball transitioned at least 50% of the pitch vertically', which is worded differently from the 40-yard rule. Both are equal only if width is 80 yards. Underlies the double switch (P04)."
+    },
+    {
+      "id": "P08",
+      "source": {
+        "identifier": "https://spielverlagerung.com/2021/07/05/tactical-theory-the-various-forms-of-rest-defence/ (Spielverlagerung, guest author, published 2021-07-05; section: introduction (Restfeldsicherung))",
+        "type": "coaching_writing",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "Restfeldsicherung translates to having players positioned in deeper areas of the field when in possession with the means of controlling defensive spaces in case of an opposition counterattack.",
+      "paraphrase": "While our team has the ball, some of our players stay in deeper areas, behind the ball, positioned to defend against a counterattack if the ball is lost.",
+      "concept": "rest-defence",
+      "constructs": [
+        "spatial_predicate",
+        "set_quantifier",
+        "interval_predicate",
+        "possession_scope",
+        "partial_visibility"
+      ],
+      "data_model": "events_360",
+      "split": "design",
+      "provider_label": null,
+      "notes": "A state that must hold across the whole possession, not at one instant. 'Deeper areas' has no threshold and the number of players is not given here. Deep players are often outside the 360 visible area, so results are often unknown."
+    },
+    {
+      "id": "P09",
+      "source": {
+        "identifier": "https://spielverlagerung.com/2021/07/05/tactical-theory-the-various-forms-of-rest-defence/ (Spielverlagerung, guest author, published 2021-07-05; section: 2-2 shape)",
+        "type": "coaching_writing",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "The 2-2 shape consists of four players forming the restdefence in a 2-2 stagger.",
+      "paraphrase": "Four of our players behind the ball arranged as two lines of two, staggered.",
+      "concept": "2-2 box rest-defence",
+      "constructs": [
+        "spatial_predicate",
+        "set_quantifier",
+        "partial_visibility"
+      ],
+      "data_model": "events_360",
+      "split": "design",
+      "provider_label": null,
+      "notes": "Shape detection from point positions: needs tolerances for 'line' and 'stagger'. If one of the four players is outside the visible area, the shape is unknown, not false. Related to P08 and to P10, which must be distinguishable."
+    },
+    {
+      "id": "P10",
+      "source": {
+        "identifier": "https://spielverlagerung.com/2021/07/05/tactical-theory-the-various-forms-of-rest-defence/ (Spielverlagerung, guest author, published 2021-07-05; section: 2-2 box shape variant (1-2-1))",
+        "type": "coaching_writing",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "The 1-2-1 shape allows teams to cover all of the necessary width during the attacking stage, by positioning the wide diamond players in the halfspaces and the two middle players in the centre.",
+      "paraphrase": "Four of our players behind the ball in a diamond: two wide players in the half-spaces and two central players, one at the back and one at the front.",
+      "concept": "1-2-1 diamond rest-defence",
+      "constructs": [
+        "spatial_predicate",
+        "set_quantifier",
+        "partial_visibility"
+      ],
+      "data_model": "events_360",
+      "split": "design",
+      "provider_label": null,
+      "notes": "Needs a zone definition for half-space (the Coaches' Voice glossary defines it relative to the opposition's lines, which is a different frame). Which central player is 'back' and which is 'front' is not stated. Shares its four-player count with P09, so the two must be told apart by layout."
+    },
+    {
+      "id": "P11",
+      "source": {
+        "identifier": "https://theanalyst.com/articles/opta-football-stats-definitions (Opta Analyst, page modified 2025-05-29; section: High Turnovers Ending in a Goal/Shot)",
+        "type": "provider_spec",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "The number of shot-ending or goal-ending sequences that begin with a high turnover (where a high turnover is a possession that started in open play and begins 40 metres or less from the opponent’s goal).",
+      "paraphrase": "A sequence that starts with our team winning the ball in open play within 40 metres of the opponent's goal and ends in a shot or goal.",
+      "concept": "high turnover ending in a shot",
+      "constructs": [
+        "event_predicate",
+        "spatial_predicate",
+        "sequence",
+        "possession_scope"
+      ],
+      "data_model": "events",
+      "split": "design",
+      "provider_label": null,
+      "notes": "One definition built on another (a high turnover inside a shot-ending sequence). No time limit between the turnover and the shot. No Opta label in our StatsBomb or Metrica data, so no ground truth. Opta defines a sequence as 'passages of play that belong to one team and are ended by a defensive action, a stoppage in play or a shot', which we must also define."
+    },
+    {
+      "id": "P12",
+      "source": {
+        "identifier": "https://theanalyst.com/articles/opta-football-stats-definitions (Opta Analyst, page modified 2025-05-29; section: Build-up Attacks)",
+        "type": "provider_spec",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "The number of open-play sequences that contain 10+ passes and either end in a shot or have at least one touch in the opposition’s box.",
+      "paraphrase": "An open-play sequence with 10 or more passes that either ends in a shot or includes at least one touch in the opponent's box.",
+      "concept": "build-up attack",
+      "constructs": [
+        "event_predicate",
+        "spatial_predicate",
+        "repetition",
+        "sequence",
+        "possession_scope"
+      ],
+      "data_model": "events",
+      "split": "design",
+      "provider_label": null,
+      "notes": "Count threshold on repeated passes, plus an either-or end condition. Whether the passes must be consecutive or by the same team throughout is only implied by the sequence definition. Opta defines a sequence as 'passages of play that belong to one team and are ended by a defensive action, a stoppage in play or a shot', which we must also define."
+    },
+    {
+      "id": "P13",
+      "source": {
+        "identifier": "https://theanalyst.com/articles/opta-football-stats-definitions (Opta Analyst, page modified 2025-05-29; section: Pressed Sequences)",
+        "type": "provider_spec",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "The number of open-play sequences starting in their defensive third where the opposition has three or fewer passes, and the sequence ends in their own half.",
+      "paraphrase": "An open-play sequence that starts in the pressing team's defensive third, has at most 3 passes by the opponent, and ends in the opponent's own half.",
+      "concept": "pressed sequence",
+      "constructs": [
+        "event_predicate",
+        "spatial_predicate",
+        "repetition",
+        "sequence",
+        "possession_scope"
+      ],
+      "data_model": "events",
+      "split": "design",
+      "provider_label": null,
+      "notes": "Upper bound on a repeated event (at most 3 passes) combined with start and end locations. The wording mixes 'their' and 'own' across the two teams, so who 'their' refers to must be settled by the author. Opta defines a sequence as 'passages of play that belong to one team and are ended by a defensive action, a stoppage in play or a shot', which we must also define."
+    },
+    {
+      "id": "P14",
+      "source": {
+        "identifier": "https://theanalyst.com/articles/opta-football-stats-definitions (Opta Analyst, page modified 2025-05-29; section: Cross)",
+        "type": "provider_spec",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "A ball played from a wide position that targets a teammate(s) in a central area in close proximity to the goal. The delivery must have an element of lateral movement from a wider position to a more central area in front of goal.",
+      "paraphrase": "A ball from a wide position aimed at a teammate in a central area near goal, moving sideways from wide toward the centre.",
+      "concept": "cross",
+      "constructs": [
+        "event_predicate",
+        "spatial_predicate"
+      ],
+      "data_model": "events",
+      "split": "design",
+      "provider_label": null,
+      "notes": "Written in words, unlike StatsBomb's zone-based cross (Appendix 6, a diagram we could not read). Compare against StatsBomb's cross flag. 'Wide', 'central' and 'close proximity' have no numbers, and the pass must target a teammate."
+    },
+    {
+      "id": "P15",
+      "source": {
+        "identifier": "https://theanalyst.com/articles/opta-football-stats-definitions (Opta Analyst, page modified 2025-05-29; section: Goals and Shots: Pattern of Play)",
+        "type": "provider_spec",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "Set-piece goals/attempts are those where the ball starts from a dead-ball situation such as a corner, a free-kick, a penalty or a throw-in and results in a shot before the phase of play has broken down into open play.",
+      "paraphrase": "A shot that follows a dead-ball restart (corner, free kick, penalty or throw-in), with no break into open play in between.",
+      "concept": "set-piece attempt",
+      "constructs": [
+        "event_predicate",
+        "sequence",
+        "possession_scope",
+        "interval_predicate"
+      ],
+      "data_model": "events",
+      "split": "design",
+      "provider_label": null,
+      "notes": "Gives the boundary that StatsBomb's 'From Corner' (P06) leaves open: the passage ends when play 'has broken down into open play'. Opta adds that a cleared corner put straight back into the box still counts as set play 'as the defending team is still positioned to deal with the set play'. Still undefined: what makes 'broken down into open play'."
+    },
+    {
+      "id": "P16",
+      "source": {
+        "identifier": "https://skillcorner.com/us/articles/scouted-introduction-to-the-gamebreaker (SkillCorner, run-type definitions list; the run types also appear in https://skillcorner.com/us/articles/game-intelligence-off-ball-run-types, published 2023-09-25)",
+        "type": "provider_spec",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "Run in Behind: a run into space behind the opponent's last defensive line",
+      "paraphrase": "A player without the ball runs into the space behind the opponent's last defensive line.",
+      "concept": "run in behind",
+      "constructs": [
+        "kinematic_predicate",
+        "spatial_predicate",
+        "interval_predicate"
+      ],
+      "data_model": "tracking",
+      "split": "design",
+      "provider_label": null,
+      "notes": "SkillCorner does not publish its speed, duration or distance thresholds for what counts as a 'run', so the author must supply them. 'Last defensive line' needs a definition from tracking positions (last outfield defender? line of the back four?). Tracking only, with no SkillCorner label in our Metrica sample."
+    },
+    {
+      "id": "P17",
+      "source": {
+        "identifier": "https://skillcorner.com/us/articles/scouted-introduction-to-the-gamebreaker (SkillCorner, run-type definitions list; the run types also appear in https://skillcorner.com/us/articles/game-intelligence-off-ball-run-types, published 2023-09-25)",
+        "type": "provider_spec",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "Run Ahead of the Ball: a run originating ahead of the player in possession, running towards the opponent's goal but not going beyond the last defensive line",
+      "paraphrase": "A run that starts ahead of the ball carrier, heads toward the opponent's goal, and stays short of the last defensive line.",
+      "concept": "run ahead of the ball",
+      "constructs": [
+        "kinematic_predicate",
+        "spatial_predicate",
+        "interval_predicate",
+        "negation"
+      ],
+      "data_model": "tracking",
+      "split": "design",
+      "provider_label": null,
+      "notes": "Defined against P16: it is the same direction of run but must not pass the last defensive line, so the two must not overlap. Needs the same run thresholds, plus a rule for 'ahead of the player in possession' when possession changes during the run."
+    },
+    {
+      "id": "P18",
+      "source": {
+        "identifier": "https://learning.coachesvoice.com/cv/in-focus-high-press/ (section: Trigger-based press)",
+        "type": "coaching_writing",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "A trigger-based press responds to specific moments during open play, such as a backward pass, or a slow or inaccurate ball.",
+      "paraphrase": "In open play, a trigger event (a backward pass, or a slow or inaccurate pass) is followed by a press from the defending team.",
+      "concept": "trigger-based press",
+      "constructs": [
+        "event_predicate",
+        "sequence",
+        "time_window",
+        "possession_scope"
+      ],
+      "data_model": "events",
+      "split": "design",
+      "provider_label": null,
+      "notes": "No time limit is given for 'responds', so the author must choose one. 'Slow' and 'inaccurate' have no numbers. 'Backward' can be computed from pass direction. Related to the press-trap (P01), where the press forces the back-pass instead of reacting to it."
+    },
+    {
+      "id": "P19",
+      "source": {
+        "identifier": "https://learning.coachesvoice.com/cv/in-focus-high-press/ (section: Pressing from restarts)",
+        "type": "coaching_writing",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "Rather than sitting off and waiting for play to develop, the highest-pressing sides position players aggressively to block central progression and force the opposition into a mistake, a wide pressing trap, or to play long.",
+      "paraphrase": "From a goal kick, the pressing team places players so that central passes are blocked, and the restart ends in a mistake, a wide pass into a trap, or a long ball.",
+      "concept": "press from a goal kick",
+      "constructs": [
+        "event_predicate",
+        "spatial_predicate",
+        "set_quantifier",
+        "possession_scope",
+        "partial_visibility"
+      ],
+      "data_model": "events_360",
+      "split": "design",
+      "provider_label": null,
+      "notes": "The page says this comes 'typically from a goal-kick restart'. The restart is a StatsBomb play pattern, and the positions come from the freeze frame at the kick, where pressers outside the visible area give 'unknown'. 'Block central progression' has no numbers. The three outcomes are a disjunction."
+    },
+    {
+      "id": "P20",
+      "source": {
+        "identifier": "https://learning.coachesvoice.com/cv/in-focus-high-press/ (section: Key principles, Collective commitment)",
+        "type": "coaching_writing",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "A single forward sprinting towards a centre-back can apply some pressure, but is likely to be an underloaded press, meaning that the opposition have a numerical advantage that should help them to beat the lone presser.",
+      "paraphrase": "A pressure by one player where the opponents near the ball outnumber the pressing team's players near the ball.",
+      "concept": "underloaded press",
+      "constructs": [
+        "event_predicate",
+        "spatial_predicate",
+        "set_quantifier",
+        "partial_visibility"
+      ],
+      "data_model": "events_360",
+      "split": "design",
+      "provider_label": null,
+      "notes": "Needs a radius around the presser for who counts as 'near'. Players outside the visible area are unknown, so the count is a range and the match can be true, false or unknown."
+    },
+    {
+      "id": "P21",
+      "source": {
+        "identifier": "https://learning.coachesvoice.com/cv/third-man-runs-football-tactics-explained-gasperini-guardiola/",
+        "type": "coaching_writing",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "Two players exchange passes before a third makes an off-the-ball run into space to receive.",
+      "paraphrase": "Two players pass between themselves, then a third player makes an off-the-ball run into space and receives.",
+      "concept": "third-man run",
+      "constructs": [
+        "event_predicate",
+        "sequence",
+        "kinematic_predicate",
+        "spatial_predicate",
+        "interval_predicate"
+      ],
+      "data_model": "events_and_tracking",
+      "split": "design",
+      "provider_label": null,
+      "notes": "The page's examples are A passes to B, B passes on to C, with C running into a gap, so 'exchange' is read as a pass and a pass on, not a one-two. The page also says the first step is that 'a player must first draw an opponent out of position by moving forward with the ball', and that the run is 'into space', with no definition of space. Passes come from events and the run from tracking, so it needs both models joined on time."
+    },
+    {
+      "id": "P22",
+      "source": {
+        "identifier": "https://learning.coachesvoice.com/cv/half-spaces-football-tactics-explained/",
+        "type": "coaching_writing",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "Teams tend to aim to get on the ball in the half-spaces in the final third; usually around the edge of the penalty area, where they can threaten goal.",
+      "paraphrase": "A player receives the ball in a half-space lane inside the attacking third.",
+      "concept": "half-space reception in the final third",
+      "constructs": [
+        "event_predicate",
+        "spatial_predicate"
+      ],
+      "data_model": "events",
+      "split": "design",
+      "provider_label": null,
+      "notes": "Zones come from the same page: five vertical lanes, wide areas as lanes 1 and 5, the central lane 'usually defined as the width of the centre circle or six-yard box', and the half-spaces are lanes 2 and 4 between them. The boundaries are not given as numbers, and 'final third' is not defined."
+    },
+    {
+      "id": "P23",
+      "source": {
+        "identifier": "docs/StatsBomb_Open_Data_Specification_v1.1.pdf, Pass event attribute 'technique' = 108 'Through Ball'",
+        "type": "provider_spec",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "Pass cuts last line of defence",
+      "paraphrase": "A pass that goes through the opponent's last line of defence.",
+      "concept": "through ball",
+      "constructs": [
+        "event_predicate",
+        "spatial_predicate",
+        "partial_visibility"
+      ],
+      "data_model": "events_360",
+      "split": "design",
+      "provider_label": "pass.technique = Through Ball",
+      "notes": "'Last line of defence' needs a definition from player positions (the same problem as P16). The 360 frame gives positions at the pass, but defenders outside the visible area are unknown. Whether the pass must reach a teammate is not stated."
+    },
+    {
+      "id": "P24",
+      "source": {
+        "identifier": "docs/StatsBomb_Open_Data_Specification_v1.1.pdf, Pass event attribute 'shot_assist'",
+        "type": "provider_spec",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "Added if the pass was an assist to a shot (that did not score a goal).",
+      "paraphrase": "A pass that leads directly to a teammate's shot that is not a goal.",
+      "concept": "shot assist",
+      "constructs": [
+        "event_predicate",
+        "sequence",
+        "possession_scope"
+      ],
+      "data_model": "events",
+      "split": "design",
+      "provider_label": "pass.shot_assist",
+      "notes": "The spec does not say how directly the shot must follow the pass (no touch limit, no time limit). StatsBomb links it with the shot's key-pass id, so the match must be tested against that link. A goal assist is the separate flag 'goal-assist'."
+    },
+    {
+      "id": "P25",
+      "source": {
+        "identifier": "docs/StatsBomb_Open_Data_Specification_v1.1.pdf, Play pattern 8 'From Keeper'",
+        "type": "provider_spec",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "The event was part of the passage of play following a keeper distribution.",
+      "paraphrase": "Every event in the passage of play that starts with the goalkeeper distributing the ball.",
+      "concept": "play after keeper distribution",
+      "constructs": [
+        "event_predicate",
+        "possession_scope",
+        "interval_predicate"
+      ],
+      "data_model": "events",
+      "split": "design",
+      "provider_label": "play_pattern = From Keeper",
+      "notes": "Needs the passage to end somewhere. The spec does not say when it stops, and P15 gives a similar open question for set pieces. Not the same as 'From Goal Kick' (play pattern 7), which is a restart."
+    },
+    {
+      "id": "P26",
+      "source": {
+        "identifier": "https://www.fifatrainingcentre.com/en/game/game-analysis/out-of-possession/high-press.php (FIFA Training Centre, section: introduction; text supplied by the team from a signed-in browser)",
+        "type": "coaching_writing",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "It is an attacking tactic employed by a team that defend high up the pitch, with their backline often just inside their opponents' half.",
+      "paraphrase": "A team defends with its back line high up the pitch, usually just inside the opponent's half.",
+      "concept": "high press (high defensive line)",
+      "constructs": [
+        "spatial_predicate",
+        "kinematic_predicate",
+        "interval_predicate",
+        "set_quantifier"
+      ],
+      "data_model": "tracking",
+      "split": "design",
+      "provider_label": null,
+      "notes": "'Backline' needs a definition from tracking positions (same issue as P16). 'Often just inside' has no numbers. It is a condition over an interval, so a rule for how long the line must stay there is needed. Completes the line-height series with P05."
+    },
+    {
+      "id": "P27",
+      "source": {
+        "identifier": "https://www.fifatrainingcentre.com/en/game/game-analysis/out-of-possession/high-press.php (FIFA Training Centre, section: Intensity; text supplied by the team from a signed-in browser)",
+        "type": "coaching_writing",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "if the team are winning with only a few minutes left, they may retreat into a mid- or low block to protect their lead",
+      "paraphrase": "Late in a match, while leading, the team's defensive line drops from a higher position to a mid or low block.",
+      "concept": "dropping into a block when leading late",
+      "constructs": [
+        "time_window",
+        "interval_predicate",
+        "kinematic_predicate",
+        "spatial_predicate"
+      ],
+      "data_model": "events_and_tracking",
+      "split": "design",
+      "provider_label": null,
+      "notes": "Needs the score at each moment (from goal events) plus line height from tracking. 'A few minutes' has no number, and 'may' means it is a tendency, so the match is a change in block height, not a guaranteed behaviour. It conditions on score and clock together, which no other entry does. The page's first-half variant (tiring before half-time) is a second case with no score condition."
+    },
+    {
+      "id": "P28",
+      "source": {
+        "identifier": "https://www.fifatrainingcentre.com/en/game/game-analysis/out-of-possession/team-organisation--out-of-possession-.php (FIFA Training Centre, section: Close the space; text supplied by the team from a signed-in browser)",
+        "type": "coaching_writing",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "Narrow the pitch horizontally. This is done by bringing the wide players further infield so that the team are more compact.",
+      "paraphrase": "The team's width shrinks because the wide players move toward the centre.",
+      "concept": "horizontal compactness",
+      "constructs": [
+        "kinematic_predicate",
+        "spatial_predicate",
+        "interval_predicate",
+        "set_quantifier"
+      ],
+      "data_model": "tracking",
+      "split": "design",
+      "provider_label": null,
+      "notes": "The page gives one number: the line's width is 'roughly the width of the penalty area'. Needs a definition of team width (outfield players' side-to-side spread, or the line's width) and which players count as 'wide'. 'Bringing in' is a change over time, so it needs an earlier width to compare against."
+    },
+    {
+      "id": "P29",
+      "source": {
+        "identifier": "https://www.fifatrainingcentre.com/en/game/game-analysis/transition-to-defending/the-reaction-to-losing-the-ball.php (FIFA Training Centre, section: Individual counter-press; text supplied by the team from a signed-in browser)",
+        "type": "coaching_writing",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "The player who loses possession presses immediately to try to win the ball back or force a possession turnover.",
+      "paraphrase": "After a team loses the ball, the player who lost it applies pressure straight away.",
+      "concept": "individual counter-press",
+      "constructs": [
+        "event_predicate",
+        "sequence",
+        "time_window",
+        "possession_scope"
+      ],
+      "data_model": "events",
+      "split": "design",
+      "provider_label": null,
+      "notes": "A subtype of P02 that adds a same-player condition: the pressure must come from the player whose action lost possession. 'Immediately' has no number (StatsBomb uses 5 seconds in P02). Needs a rule for which event counts as the loss (pass, miscontrol, dispossession)."
+    },
+    {
+      "id": "P30",
+      "source": {
+        "identifier": "https://www.fifatrainingcentre.com/en/game/game-analysis/transition-to-defending/the-reaction-to-losing-the-ball.php (FIFA Training Centre, section: Collective counter-press; text supplied by the team from a signed-in browser)",
+        "type": "coaching_writing",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "The approach centres on attempting to win the ball back in a more structured manner through a system that features a number of, if not all, outfield players.",
+      "paraphrase": "After a team loses the ball, several of its outfield players press within a short time.",
+      "concept": "collective counter-press",
+      "constructs": [
+        "event_predicate",
+        "set_quantifier",
+        "time_window",
+        "repetition",
+        "possession_scope"
+      ],
+      "data_model": "events",
+      "split": "design",
+      "provider_label": null,
+      "notes": "A subtype of P02 that needs several different pressers. 'A number of' has no number, but the page's overall summary says 'three, four or potentially more players'. The page also says the counter-press 'is applied on multiple occasions', so it can repeat before the ball is won. Pressers outside the 360 visible area would matter if positions were used, but pressure events alone are enough here."
+    },
+    {
+      "id": "P31",
+      "source": {
+        "identifier": "https://www.fifatrainingcentre.com/en/game/game-analysis/transition-to-attacking/passing-the-press.php (FIFA Training Centre, section: Player 3; text supplied by the team from a signed-in browser)",
+        "type": "coaching_writing",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "The objective of passing the press, however, is to open the pitch up by taking out at least two or three pressing players.",
+      "paraphrase": "After a team regains the ball under pressure, its passes or runs get the ball past at least two or three of the players pressing it.",
+      "concept": "passing through the press",
+      "constructs": [
+        "event_predicate",
+        "spatial_predicate",
+        "sequence",
+        "set_quantifier",
+        "time_window",
+        "possession_scope",
+        "partial_visibility"
+      ],
+      "data_model": "events_360",
+      "split": "design",
+      "provider_label": null,
+      "notes": "The page describes three roles: the player who regains the ball, the player who receives the first pass (often 'only a couple of yards and either backwards or sideways'), and a runner offering the out ball, who can be the first player after moving into space. 'Taking out' a presser needs a rule, such as the presser ending up behind the ball relative to the goal. 'Pressing players' means those pressing at the moment of the regain, and players outside the visible area make the count unknown. Same three-player shape as P21, but it starts from a regain under a counter-press."
+    },
+    {
+      "id": "P32",
+      "source": {
+        "identifier": "https://www.fifatrainingcentre.com/en/game/performance-analysis/football-language-analysis/movement-to-receive.php (FIFA Training Centre, FIFA Football Language, section: In front; text supplied by the team from a signed-in browser)",
+        "type": "coaching_writing",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "This occurs when a player makes a movement to receive the ball in front of the opposition’s first unit line, which can happen in any third of the pitch and either inside or outside the opposition team shape.",
+      "paraphrase": "A player moves to a spot in front of the opponent's first line of players, and receives the ball there.",
+      "concept": "in-front movement",
+      "constructs": [
+        "kinematic_predicate",
+        "spatial_predicate",
+        "interval_predicate",
+        "event_predicate"
+      ],
+      "data_model": "tracking",
+      "split": "design",
+      "provider_label": null,
+      "notes": "Needs 'unit' and 'team shape' defined from tracking positions (for example, units as lines of defenders, midfielders and attackers, and the shape as their outline), the same problem as P16 and P26. 'First unit line' is the opponent's most advanced line, whichever it is. The movement and the receiving pass must be linked in time, with no limit given. FIFA's 'The FIFA Football Language' page (the-fifa-football-language.php) adds that units come from a tracking-based algorithm that clusters players into lines (the algorithm is not published), that 'units' counts the opposition's defensive lines faced, and that a position is outside the team shape when it is outside the width of the two widest players in the final unit. The FIFA 'Movement to receive' page also says the player must begin their movement from beyond the opposition's first unit or highest attacking player."
+    },
+    {
+      "id": "P33",
+      "source": {
+        "identifier": "https://www.fifatrainingcentre.com/en/game/performance-analysis/football-language-analysis/movement-to-receive.php (FIFA Training Centre, FIFA Football Language, section: In between; text supplied by the team from a signed-in browser)",
+        "type": "coaching_writing",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "This occurs when a player makes a movement to receive the ball between two units, inside the opposition team shape.",
+      "paraphrase": "A player moves into the gap between two opposing lines, inside the opponent's shape, and receives the ball there.",
+      "concept": "in-between movement",
+      "constructs": [
+        "kinematic_predicate",
+        "spatial_predicate",
+        "interval_predicate",
+        "event_predicate"
+      ],
+      "data_model": "tracking",
+      "split": "design",
+      "provider_label": null,
+      "notes": "Needs 'unit' and 'team shape' defined from tracking positions (for example, units as lines of defenders, midfielders and attackers, and the shape as their outline), the same problem as P16 and P26. The page says teams most often have three units, so the gap is between midfield and attack, or between defence and midfield. Needs a rule for the number of units when a team has more or fewer. FIFA's 'The FIFA Football Language' page (the-fifa-football-language.php) adds that units come from a tracking-based algorithm that clusters players into lines (the algorithm is not published), that 'units' counts the opposition's defensive lines faced, and that a position is outside the team shape when it is outside the width of the two widest players in the final unit."
+    },
+    {
+      "id": "P34",
+      "source": {
+        "identifier": "https://www.fifatrainingcentre.com/en/game/performance-analysis/football-language-analysis/movement-to-receive.php (FIFA Training Centre, FIFA Football Language, section: In to out; text supplied by the team from a signed-in browser)",
+        "type": "coaching_writing",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "This occurs when a player makes a movement from inside the opposition team shape to outside the opposition team shape so as to receive the ball between the first and final opposition team unit.",
+      "paraphrase": "A player starts inside the opponent's shape, moves outside it, and receives the ball between the first and last opposing lines.",
+      "concept": "in-to-out movement",
+      "constructs": [
+        "kinematic_predicate",
+        "spatial_predicate",
+        "sequence",
+        "interval_predicate",
+        "event_predicate"
+      ],
+      "data_model": "tracking",
+      "split": "design",
+      "provider_label": null,
+      "notes": "Needs 'unit' and 'team shape' defined from tracking positions (for example, units as lines of defenders, midfielders and attackers, and the shape as their outline), the same problem as P16 and P26. A state change across the edge of the shape over an interval, so the start and end states both need to hold. 'So as to' is intent, so only the movement and the receiving can be matched. Mirror image of P35. FIFA's 'The FIFA Football Language' page (the-fifa-football-language.php) adds that units come from a tracking-based algorithm that clusters players into lines (the algorithm is not published), that 'units' counts the opposition's defensive lines faced, and that a position is outside the team shape when it is outside the width of the two widest players in the final unit."
+    },
+    {
+      "id": "P35",
+      "source": {
+        "identifier": "https://www.fifatrainingcentre.com/en/game/performance-analysis/football-language-analysis/movement-to-receive.php (FIFA Training Centre, FIFA Football Language, section: Out to in; text supplied by the team from a signed-in browser)",
+        "type": "coaching_writing",
+        "retrieved": "2026-11-16"
+      },
+      "verbatim": "This occurs when a player makes a movement from outside the opposition team shape to inside the opposition team shape so as to receive the ball between the first and final opposition team unit.",
+      "paraphrase": "A player starts outside the opponent's shape, moves inside it, and receives the ball between the first and last opposing lines.",
+      "concept": "out-to-in movement",
+      "constructs": [
+        "kinematic_predicate",
+        "spatial_predicate",
+        "sequence",
+        "interval_predicate",
+        "event_predicate"
+      ],
+      "data_model": "tracking",
+      "split": "design",
+      "provider_label": null,
+      "notes": "Needs 'unit' and 'team shape' defined from tracking positions (for example, units as lines of defenders, midfielders and attackers, and the shape as their outline), the same problem as P16 and P26. Mirror image of P34. The page notes it is mostly made by wide players, and sometimes as a decoy that frees a full-back, so a decoy has no receiving and would not match. FIFA's 'The FIFA Football Language' page (the-fifa-football-language.php) adds that units come from a tracking-based algorithm that clusters players into lines (the algorithm is not published), that 'units' counts the opposition's defensive lines faced, and that a position is outside the team shape when it is outside the width of the two widest players in the final unit."
+    },
+    {
+      "id": "P36",
+      "source": {
+        "identifier": "https://www.fifatrainingcentre.com/en/resources-tools/football-language/in-possession/penetrative-action/index.php (FIFA Training Centre, FIFA Football Language; text supplied by the team from a signed-in browser)",
+        "type": "coaching_writing",
+        "retrieved": "2026-11-17"
+      },
+      "verbatim": "Penetrative actions include passes, crosses or ball progressions that break the lines of the opposing team. This can be achieved by going through a line, around it or over it.",
+      "paraphrase": "A pass, cross or carry that gets the ball past one or more lines of opposing players, by going through, around or over them.",
+      "concept": "penetrative action (line break)",
+      "constructs": [
+        "event_predicate",
+        "spatial_predicate",
+        "set_quantifier",
+        "partial_visibility"
+      ],
+      "data_model": "events_360",
+      "split": "design",
+      "provider_label": null,
+      "notes": "The page says a unit line must consist of at least two players, and that the classification counts how many and which units are broken and whether the ball is received inside or outside the opposition shape. Three modes: through a line (between two players), around it (when a narrow shape leaves the wings open), and over it (a long ball over the defence). 'Around' needs a rule against the edge of the shape. A ball progression means a carry, so it needs carry events. Units come from clustering players into lines, as for P32-P35. More general than P23 (through ball), which only covers the last line."
+    },
+    {
+      "id": "P37",
+      "source": {
+        "identifier": "https://www.fifatrainingcentre.com/en/resources-tools/football-language/in-possession/movement-to-receive/index.php (FIFA Training Centre, FIFA Football Language, section: Come and go; text supplied by the team from a signed-in browser)",
+        "type": "coaching_writing",
+        "retrieved": "2026-11-17"
+      },
+      "verbatim": "A player has performed a movement away from the opposition final unit towards their own goal before turning and then making a countermovement to receive the ball in behind. The movements must be continuous.",
+      "paraphrase": "A player first moves away from the last opposing line, then turns and runs back toward it and in behind it to receive the ball, with no pause between the two moves.",
+      "concept": "come and go movement",
+      "constructs": [
+        "kinematic_predicate",
+        "spatial_predicate",
+        "sequence",
+        "interval_predicate",
+        "event_predicate"
+      ],
+      "data_model": "tracking",
+      "split": "design",
+      "provider_label": null,
+      "notes": "'Continuous' needs a rule for how long a pause may last before the two movements count as separate. A match is two consecutive movement intervals, the second starting where the first ends. The in-behind part is the same idea as P16. Units and shape are as in P32 (FIFA clusters players into lines from tracking; the algorithm is not published; a unit line needs at least two players)."
+    },
+    {
+      "id": "P38",
+      "source": {
+        "identifier": "https://www.fifatrainingcentre.com/en/resources-tools/football-language/in-possession/movement-to-receive/index.php (FIFA Training Centre, FIFA Football Language, section: Pushing the line; text supplied by the team from a signed-in browser)",
+        "type": "coaching_writing",
+        "retrieved": "2026-11-17"
+      },
+      "verbatim": "A player has performed a movement to receive the ball in behind the opposition final unit. The movement has been tracked by an opposition player in the final unit, which then pushes the unit line deeper and creates space in front.",
+      "paraphrase": "An attacker runs in behind the last line, a defender in that line follows, and the line is pushed deeper.",
+      "concept": "pushing the line",
+      "constructs": [
+        "kinematic_predicate",
+        "spatial_predicate",
+        "interval_predicate",
+        "set_quantifier",
+        "event_predicate"
+      ],
+      "data_model": "tracking",
+      "split": "design",
+      "provider_label": null,
+      "notes": "Needs the line's depth before and after the run, and a rule for 'tracked' (a defender follows within some distance). 'Creates space in front' is the gap between the line and the midfield getting larger. The effect is on the defenders' positions, so the pattern is about two groups at once. Units and shape are as in P32 (FIFA clusters players into lines from tracking; the algorithm is not published; a unit line needs at least two players)."
+    },
+    {
+      "id": "P39",
+      "source": {
+        "identifier": "https://www.fifatrainingcentre.com/en/resources-tools/football-language/in-possession/movement-to-receive/index.php (FIFA Training Centre, FIFA Football Language, section: Offside to onside; text supplied by the team from a signed-in browser)",
+        "type": "coaching_writing",
+        "retrieved": "2026-11-17"
+      },
+      "verbatim": "A player has performed a movement to receive the ball in front of the opposition final unit, having started in an offside position.",
+      "paraphrase": "A player starts in an offside position and moves back to receive the ball in front of the last opposing line.",
+      "concept": "offside to onside movement",
+      "constructs": [
+        "kinematic_predicate",
+        "spatial_predicate",
+        "interval_predicate",
+        "sequence",
+        "event_predicate"
+      ],
+      "data_model": "tracking",
+      "split": "design",
+      "provider_label": null,
+      "notes": "Needs an offside test at the start of the movement from tracking positions (the player is closer to the goal line than the ball and the second-last defender). The receive must be in front of the final unit, so the player has crossed back. Offside from StatsBomb events would only cover passes that were flagged offside. Units and shape are as in P32 (FIFA clusters players into lines from tracking; the algorithm is not published; a unit line needs at least two players)."
+    },
+    {
+      "id": "P40",
+      "source": {
+        "identifier": "https://www.fifatrainingcentre.com/en/resources-tools/football-language/out-of-possession/defensive-pressure/index.php (FIFA Training Centre, FIFA Football Language; text supplied by the team from a signed-in browser)",
+        "type": "coaching_writing",
+        "retrieved": "2026-11-17"
+      },
+      "verbatim": "An out-of-possession winger can then recognise that the ball is going to be played to the full-back and can anticipate the opportunity to engage the opponent early before they receive the ball, which is referred to as “pushing on”.",
+      "paraphrase": "A defender starts pressing the player who is about to receive a pass, before the ball reaches them.",
+      "concept": "pushing on",
+      "constructs": [
+        "event_predicate",
+        "sequence",
+        "time_window",
+        "spatial_predicate"
+      ],
+      "data_model": "events",
+      "split": "design",
+      "provider_label": null,
+      "notes": "In event data the match is a pressure event on the intended receiver that starts before the receipt event (or before the pass lands). Needs a rule for how close the presser must be, and for how early counts as 'early'. 'Recognise that the ball is going to be played' is intent, so only the timing can be matched. The page's example follows a press that forces a pass to the full-back, so it is the second half of the P01 press-trap shape."
+    },
+    {
+      "id": "P41",
+      "source": {
+        "identifier": "docs/StatsBomb_Open_Data_Specification_v1.1.pdf, play_pattern 3 / “From Free Kick” (p.10)",
+        "type": "provider_spec",
+        "retrieved": "2026-11-17"
+      },
+      "verbatim": "The event was part of the passage of play following a free-kick.",
+      "paraphrase": "Any event in the attacking passage of play that starts from a free kick.",
+      "concept": "attack from a free kick",
+      "constructs": [
+        "event_predicate",
+        "sequence",
+        "possession_scope",
+        "interval_predicate"
+      ],
+      "data_model": "events",
+      "split": "design",
+      "provider_label": "play_pattern = From Free Kick",
+      "notes": "Free kicks cover shots at goal, crosses into the box and quick restarts, so the starting event needs a rule (a pass or shot with set-piece type free kick). The spec does not say when the 'passage of play' ends."
+    },
+    {
+      "id": "P42",
+      "source": {
+        "identifier": "docs/StatsBomb_Open_Data_Specification_v1.1.pdf, play_pattern 4 / “From Throw In” (p.10)",
+        "type": "provider_spec",
+        "retrieved": "2026-11-17"
+      },
+      "verbatim": "The event was part of the passage of play following a throw-in.",
+      "paraphrase": "Any event in the attacking passage of play that starts from a throw-in.",
+      "concept": "attack from a throw-in",
+      "constructs": [
+        "event_predicate",
+        "sequence",
+        "possession_scope",
+        "interval_predicate"
+      ],
+      "data_model": "events",
+      "split": "design",
+      "provider_label": "play_pattern = From Throw In",
+      "notes": "The spec does not say when the 'passage of play' ends. Same structure as P06."
+    },
+    {
+      "id": "P43",
+      "source": {
+        "identifier": "docs/StatsBomb_Open_Data_Specification_v1.1.pdf, play_pattern 7 / “From Goal Kick” (p.10)",
+        "type": "provider_spec",
+        "retrieved": "2026-11-17"
+      },
+      "verbatim": "The event was part of the passage of play following a goal kick.",
+      "paraphrase": "Any event in the attacking passage of play that starts from a goal kick.",
+      "concept": "attack from a goal kick",
+      "constructs": [
+        "event_predicate",
+        "sequence",
+        "possession_scope",
+        "interval_predicate"
+      ],
+      "data_model": "events",
+      "split": "design",
+      "provider_label": "play_pattern = From Goal Kick",
+      "notes": "The spec does not say when the 'passage of play' ends. Not the same as P25 (From Keeper), which covers any keeper distribution, though a goal kick is one. Same structure as P06."
+    },
+    {
+      "id": "P44",
+      "source": {
+        "identifier": "docs/StatsBomb_Open_Data_Specification_v1.1.pdf, play_pattern 9 / “From Kick Off” (p.10)",
+        "type": "provider_spec",
+        "retrieved": "2026-11-17"
+      },
+      "verbatim": "The event was part of the passage of play following the kick off.",
+      "paraphrase": "Any event in the attacking passage of play that starts from a kick-off.",
+      "concept": "attack from a kick-off",
+      "constructs": [
+        "event_predicate",
+        "sequence",
+        "possession_scope",
+        "interval_predicate"
+      ],
+      "data_model": "events",
+      "split": "design",
+      "provider_label": "play_pattern = From Kick Off",
+      "notes": "Kick-offs happen at the start of each half and after each goal. The spec does not say when the 'passage of play' ends. Same structure as P06."
+    }
+  ]
+}
