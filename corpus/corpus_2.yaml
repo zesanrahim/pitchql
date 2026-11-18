@@ -1,14 +1,16 @@
-# PitchQL requirements corpus, version 2.
+# PitchQL requirements corpus, version 0.3.0.
 # Derived from corpus/corpus.json (v0.1.0, 44 patterns), which is kept unchanged as the record.
-# Dropped here (8): P10, P25, P29, P33, P35, P42, P43, P44.
+# Dropped (12, old labels): P10, P11, P18, P22, P25, P26, P29, P33, P35, P42, P43, P44.
 #   P42, P43, P44, P25: same shape as P06 (restart passage of play); still used in the StatsBomb flag experiment.
 #   P10: same as P09. P33: same as P32. P35: mirror of P34. P29: P30 is the stronger subtype.
+#   P11, P18, P22, P26: removed on the team's request (no reason recorded).
+# Patterns are renumbered P01-P32 in the old order. `legacy_id` holds the label from corpus.json.
 
-version: "0.2.0"
+version: "0.3.0"
 freeze_date: null
-patterns:  # 36 patterns
-
+patterns:  # 32 patterns
   - id: "P01"
+    legacy_id: "P01"
     source:
       identifier: >-
         docs/Sports_Analytics_Program.pdf, Project 3 abstract and worked
@@ -35,6 +37,7 @@ patterns:  # 36 patterns
       measured, what counts as 'regain'.
 
   - id: "P02"
+    legacy_id: "P02"
     source:
       identifier: >-
         docs/StatsBomb_Open_Data_Specification_v1.1.pdf, event attribute
@@ -56,6 +59,7 @@ patterns:  # 36 patterns
       or how simultaneous events are ordered.
 
   - id: "P03"
+    legacy_id: "P03"
     source:
       identifier: >-
         docs/StatsBomb_Open_Data_Specification_v1.1.pdf, play_pattern 6 'From
@@ -82,6 +86,7 @@ patterns:  # 36 patterns
       spec does not define, so we must choose our own definition.
 
   - id: "P04"
+    legacy_id: "P04"
     source:
       identifier: >-
         https://learning.coachesvoice.com/cv/in-focus-switching-play/
@@ -111,6 +116,7 @@ patterns:  # 36 patterns
       is a description of intent, not a strict definition.
 
   - id: "P05"
+    legacy_id: "P05"
     source:
       identifier: >-
         https://learning.coachesvoice.com/cv/glossary-football-tactics-coaching/
@@ -137,6 +143,7 @@ patterns:  # 36 patterns
       otherwise). 'Very close' and 'little space' have no numbers.
 
   - id: "P06"
+    legacy_id: "P06"
     source:
       identifier: >-
         docs/StatsBomb_Open_Data_Specification_v1.1.pdf, play_pattern 2 'From
@@ -154,10 +161,11 @@ patterns:  # 36 patterns
     provider_label: "play_pattern = From Corner"
     notes: >-
       The spec does not say when the 'passage of play' ends (first clearance?
-      change of possession? a time limit?). The other restart play patterns
-      share this structure and are entered as P41-P44.
+      change of possession? a time limit?). The free-kick restart pattern
+      shares this structure and is entered as P32. The throw-in, goal-kick and kick-off versions were dropped.
 
   - id: "P07"
+    legacy_id: "P07"
     source:
       identifier: >-
         docs/StatsBomb_Open_Data_Specification_v1.1.pdf, Pass event attribute
@@ -181,6 +189,7 @@ patterns:  # 36 patterns
       equal only if width is 80 yards. Underlies the double switch (P04).
 
   - id: "P08"
+    legacy_id: "P08"
     source:
       identifier: >-
         https://spielverlagerung.com/2021/07/05/tactical-theory-the-various-forms-of-rest-defence/
@@ -208,6 +217,7 @@ patterns:  # 36 patterns
       are often unknown.
 
   - id: "P09"
+    legacy_id: "P09"
     source:
       identifier: >-
         https://spielverlagerung.com/2021/07/05/tactical-theory-the-various-forms-of-rest-defence/
@@ -229,38 +239,11 @@ patterns:  # 36 patterns
     notes: >-
       Shape detection from point positions: needs tolerances for 'line' and
       'stagger'. If one of the four players is outside the visible area, the
-      shape is unknown, not false. Related to P08 and to P10, which must be
+      shape is unknown, not false. Related to P08 and to the dropped 1-2-1 variant (old P10), which must be
       distinguishable.
 
-  - id: "P11"
-    source:
-      identifier: >-
-        https://theanalyst.com/articles/opta-football-stats-definitions (Opta
-        Analyst, page modified 2025-05-29; section: High Turnovers Ending in a
-        Goal/Shot)
-      type: "provider_spec"
-      retrieved: "2026-11-16"
-    verbatim: >-
-      The number of shot-ending or goal-ending sequences that begin with a
-      high turnover (where a high turnover is a possession that started in
-      open play and begins 40 metres or less from the opponent’s goal).
-    paraphrase: >-
-      A sequence that starts with our team winning the ball in open play
-      within 40 metres of the opponent's goal and ends in a shot or goal.
-    concept: "high turnover ending in a shot"
-    constructs: [event_predicate, spatial_predicate, sequence, possession_scope]
-    data_model: "events"
-    split: "design"
-    provider_label: null
-    notes: >-
-      One definition built on another (a high turnover inside a shot-ending
-      sequence). No time limit between the turnover and the shot. No Opta
-      label in our StatsBomb or Metrica data, so no ground truth. Opta defines
-      a sequence as 'passages of play that belong to one team and are ended by
-      a defensive action, a stoppage in play or a shot', which we must also
-      define.
-
-  - id: "P12"
+  - id: "P10"
+    legacy_id: "P12"
     source:
       identifier: >-
         https://theanalyst.com/articles/opta-football-stats-definitions (Opta
@@ -285,7 +268,8 @@ patterns:  # 36 patterns
       'passages of play that belong to one team and are ended by a defensive
       action, a stoppage in play or a shot', which we must also define.
 
-  - id: "P13"
+  - id: "P11"
+    legacy_id: "P13"
     source:
       identifier: >-
         https://theanalyst.com/articles/opta-football-stats-definitions (Opta
@@ -313,7 +297,8 @@ patterns:  # 36 patterns
       ended by a defensive action, a stoppage in play or a shot', which we
       must also define.
 
-  - id: "P14"
+  - id: "P12"
+    legacy_id: "P14"
     source:
       identifier: >-
         https://theanalyst.com/articles/opta-football-stats-definitions (Opta
@@ -339,7 +324,8 @@ patterns:  # 36 patterns
       'Wide', 'central' and 'close proximity' have no numbers, and the pass
       must target a teammate.
 
-  - id: "P15"
+  - id: "P13"
+    legacy_id: "P15"
     source:
       identifier: >-
         https://theanalyst.com/articles/opta-football-stats-definitions (Opta
@@ -367,7 +353,8 @@ patterns:  # 36 patterns
       'as the defending team is still positioned to deal with the set play'.
       Still undefined: what makes 'broken down into open play'.
 
-  - id: "P16"
+  - id: "P14"
+    legacy_id: "P16"
     source:
       identifier: >-
         https://skillcorner.com/us/articles/scouted-introduction-to-the-gamebreaker
@@ -394,7 +381,8 @@ patterns:  # 36 patterns
       outfield defender? line of the back four?). Tracking only, with no
       SkillCorner label in our Metrica sample.
 
-  - id: "P17"
+  - id: "P15"
+    legacy_id: "P17"
     source:
       identifier: >-
         https://skillcorner.com/us/articles/scouted-introduction-to-the-gamebreaker
@@ -416,36 +404,13 @@ patterns:  # 36 patterns
     split: "design"
     provider_label: null
     notes: >-
-      Defined against P16: it is the same direction of run but must not pass
+      Defined against P14: it is the same direction of run but must not pass
       the last defensive line, so the two must not overlap. Needs the same run
       thresholds, plus a rule for 'ahead of the player in possession' when
       possession changes during the run.
 
-  - id: "P18"
-    source:
-      identifier: >-
-        https://learning.coachesvoice.com/cv/in-focus-high-press/ (section:
-        Trigger-based press)
-      type: "coaching_writing"
-      retrieved: "2026-11-16"
-    verbatim: >-
-      A trigger-based press responds to specific moments during open play,
-      such as a backward pass, or a slow or inaccurate ball.
-    paraphrase: >-
-      In open play, a trigger event (a backward pass, or a slow or inaccurate
-      pass) is followed by a press from the defending team.
-    concept: "trigger-based press"
-    constructs: [event_predicate, sequence, time_window, possession_scope]
-    data_model: "events"
-    split: "design"
-    provider_label: null
-    notes: >-
-      No time limit is given for 'responds', so the author must choose one.
-      'Slow' and 'inaccurate' have no numbers. 'Backward' can be computed from
-      pass direction. Related to the press-trap (P01), where the press forces
-      the back-pass instead of reacting to it.
-
-  - id: "P19"
+  - id: "P16"
+    legacy_id: "P19"
     source:
       identifier: >-
         https://learning.coachesvoice.com/cv/in-focus-high-press/ (section:
@@ -473,7 +438,8 @@ patterns:  # 36 patterns
       'unknown'. 'Block central progression' has no numbers. The three
       outcomes are a disjunction.
 
-  - id: "P20"
+  - id: "P17"
+    legacy_id: "P20"
     source:
       identifier: >-
         https://learning.coachesvoice.com/cv/in-focus-high-press/ (section:
@@ -498,7 +464,8 @@ patterns:  # 36 patterns
       outside the visible area are unknown, so the count is a range and the
       match can be true, false or unknown.
 
-  - id: "P21"
+  - id: "P18"
+    legacy_id: "P21"
     source:
       identifier: >-
         https://learning.coachesvoice.com/cv/third-man-runs-football-tactics-explained-gasperini-guardiola/
@@ -524,32 +491,8 @@ patterns:  # 36 patterns
       from events and the run from tracking, so it needs both models joined on
       time.
 
-  - id: "P22"
-    source:
-      identifier: >-
-        https://learning.coachesvoice.com/cv/half-spaces-football-tactics-explained/
-      type: "coaching_writing"
-      retrieved: "2026-11-16"
-    verbatim: >-
-      Teams tend to aim to get on the ball in the half-spaces in the final
-      third; usually around the edge of the penalty area, where they can
-      threaten goal.
-    paraphrase: >-
-      A player receives the ball in a half-space lane inside the attacking
-      third.
-    concept: "half-space reception in the final third"
-    constructs: [event_predicate, spatial_predicate]
-    data_model: "events"
-    split: "design"
-    provider_label: null
-    notes: >-
-      Zones come from the same page: five vertical lanes, wide areas as lanes
-      1 and 5, the central lane 'usually defined as the width of the centre
-      circle or six-yard box', and the half-spaces are lanes 2 and 4 between
-      them. The boundaries are not given as numbers, and 'final third' is not
-      defined.
-
-  - id: "P23"
+  - id: "P19"
+    legacy_id: "P23"
     source:
       identifier: >-
         docs/StatsBomb_Open_Data_Specification_v1.1.pdf, Pass event attribute
@@ -565,11 +508,12 @@ patterns:  # 36 patterns
     provider_label: "pass.technique = Through Ball"
     notes: >-
       'Last line of defence' needs a definition from player positions (the
-      same problem as P16). The 360 frame gives positions at the pass, but
+      same problem as P14). The 360 frame gives positions at the pass, but
       defenders outside the visible area are unknown. Whether the pass must
       reach a teammate is not stated.
 
-  - id: "P24"
+  - id: "P20"
+    legacy_id: "P24"
     source:
       identifier: >-
         docs/StatsBomb_Open_Data_Specification_v1.1.pdf, Pass event attribute
@@ -589,32 +533,8 @@ patterns:  # 36 patterns
       id, so the match must be tested against that link. A goal assist is the
       separate flag 'goal-assist'.
 
-  - id: "P26"
-    source:
-      identifier: >-
-        https://www.fifatrainingcentre.com/en/game/game-analysis/out-of-possession/high-press.php
-        (FIFA Training Centre, section: introduction; text supplied by the
-        team from a signed-in browser)
-      type: "coaching_writing"
-      retrieved: "2026-11-16"
-    verbatim: >-
-      It is an attacking tactic employed by a team that defend high up the
-      pitch, with their backline often just inside their opponents' half.
-    paraphrase: >-
-      A team defends with its back line high up the pitch, usually just inside
-      the opponent's half.
-    concept: "high press (high defensive line)"
-    constructs: [spatial_predicate, kinematic_predicate, interval_predicate, set_quantifier]
-    data_model: "tracking"
-    split: "design"
-    provider_label: null
-    notes: >-
-      'Backline' needs a definition from tracking positions (same issue as
-      P16). 'Often just inside' has no numbers. It is a condition over an
-      interval, so a rule for how long the line must stay there is needed.
-      Completes the line-height series with P05.
-
-  - id: "P27"
+  - id: "P21"
+    legacy_id: "P27"
     source:
       identifier: >-
         https://www.fifatrainingcentre.com/en/game/game-analysis/out-of-possession/high-press.php
@@ -641,7 +561,8 @@ patterns:  # 36 patterns
       entry does. The page's first-half variant (tiring before half-time) is a
       second case with no score condition.
 
-  - id: "P28"
+  - id: "P22"
+    legacy_id: "P28"
     source:
       identifier: >-
         https://www.fifatrainingcentre.com/en/game/game-analysis/out-of-possession/team-organisation--out-of-possession-.php
@@ -667,7 +588,8 @@ patterns:  # 36 patterns
       'wide'. 'Bringing in' is a change over time, so it needs an earlier
       width to compare against.
 
-  - id: "P30"
+  - id: "P23"
+    legacy_id: "P30"
     source:
       identifier: >-
         https://www.fifatrainingcentre.com/en/game/game-analysis/transition-to-defending/the-reaction-to-losing-the-ball.php
@@ -695,7 +617,8 @@ patterns:  # 36 patterns
       Pressers outside the 360 visible area would matter if positions were
       used, but pressure events alone are enough here.
 
-  - id: "P31"
+  - id: "P24"
+    legacy_id: "P31"
     source:
       identifier: >-
         https://www.fifatrainingcentre.com/en/game/game-analysis/transition-to-attacking/passing-the-press.php
@@ -722,10 +645,11 @@ patterns:  # 36 patterns
       needs a rule, such as the presser ending up behind the ball relative to
       the goal. 'Pressing players' means those pressing at the moment of the
       regain, and players outside the visible area make the count unknown.
-      Same three-player shape as P21, but it starts from a regain under a
+      Same three-player shape as P18, but it starts from a regain under a
       counter-press.
 
-  - id: "P32"
+  - id: "P25"
+    legacy_id: "P32"
     source:
       identifier: >-
         https://www.fifatrainingcentre.com/en/game/performance-analysis/football-language-analysis/movement-to-receive.php
@@ -748,7 +672,7 @@ patterns:  # 36 patterns
     notes: >-
       Needs 'unit' and 'team shape' defined from tracking positions (for
       example, units as lines of defenders, midfielders and attackers, and the
-      shape as their outline), the same problem as P16 and P26. 'First unit
+      shape as their outline), the same problem as P14 and old P26 (dropped). 'First unit
       line' is the opponent's most advanced line, whichever it is. The
       movement and the receiving pass must be linked in time, with no limit
       given. FIFA's 'The FIFA Football Language' page
@@ -761,7 +685,8 @@ patterns:  # 36 patterns
       movement from beyond the opposition's first unit or highest attacking
       player.
 
-  - id: "P34"
+  - id: "P26"
+    legacy_id: "P34"
     source:
       identifier: >-
         https://www.fifatrainingcentre.com/en/game/performance-analysis/football-language-analysis/movement-to-receive.php
@@ -784,10 +709,10 @@ patterns:  # 36 patterns
     notes: >-
       Needs 'unit' and 'team shape' defined from tracking positions (for
       example, units as lines of defenders, midfielders and attackers, and the
-      shape as their outline), the same problem as P16 and P26. A state change
+      shape as their outline), the same problem as P14 and old P26 (dropped). A state change
       across the edge of the shape over an interval, so the start and end
       states both need to hold. 'So as to' is intent, so only the movement and
-      the receiving can be matched. Mirror image of P35. FIFA's 'The FIFA
+      the receiving can be matched. Mirror image of old P35 (dropped). FIFA's 'The FIFA
       Football Language' page (the-fifa-football-language.php) adds that units
       come from a tracking-based algorithm that clusters players into lines
       (the algorithm is not published), that 'units' counts the opposition's
@@ -795,7 +720,8 @@ patterns:  # 36 patterns
       when it is outside the width of the two widest players in the final
       unit.
 
-  - id: "P36"
+  - id: "P27"
+    legacy_id: "P36"
     source:
       identifier: >-
         https://www.fifatrainingcentre.com/en/resources-tools/football-language/in-possession/penetrative-action/index.php
@@ -823,10 +749,11 @@ patterns:  # 36 patterns
       narrow shape leaves the wings open), and over it (a long ball over the
       defence). 'Around' needs a rule against the edge of the shape. A ball
       progression means a carry, so it needs carry events. Units come from
-      clustering players into lines, as for P32-P35. More general than P23
+      clustering players into lines, as for P25 and P26. More general than P19
       (through ball), which only covers the last line.
 
-  - id: "P37"
+  - id: "P28"
+    legacy_id: "P37"
     source:
       identifier: >-
         https://www.fifatrainingcentre.com/en/resources-tools/football-language/in-possession/movement-to-receive/index.php
@@ -851,11 +778,12 @@ patterns:  # 36 patterns
       'Continuous' needs a rule for how long a pause may last before the two
       movements count as separate. A match is two consecutive movement
       intervals, the second starting where the first ends. The in-behind part
-      is the same idea as P16. Units and shape are as in P32 (FIFA clusters
+      is the same idea as P14. Units and shape are as in P25 (FIFA clusters
       players into lines from tracking; the algorithm is not published; a unit
       line needs at least two players).
 
-  - id: "P38"
+  - id: "P29"
+    legacy_id: "P38"
     source:
       identifier: >-
         https://www.fifatrainingcentre.com/en/resources-tools/football-language/in-possession/movement-to-receive/index.php
@@ -881,11 +809,12 @@ patterns:  # 36 patterns
       'tracked' (a defender follows within some distance). 'Creates space in
       front' is the gap between the line and the midfield getting larger. The
       effect is on the defenders' positions, so the pattern is about two
-      groups at once. Units and shape are as in P32 (FIFA clusters players
+      groups at once. Units and shape are as in P25 (FIFA clusters players
       into lines from tracking; the algorithm is not published; a unit line
       needs at least two players).
 
-  - id: "P39"
+  - id: "P30"
+    legacy_id: "P39"
     source:
       identifier: >-
         https://www.fifatrainingcentre.com/en/resources-tools/football-language/in-possession/movement-to-receive/index.php
@@ -909,11 +838,12 @@ patterns:  # 36 patterns
       positions (the player is closer to the goal line than the ball and the
       second-last defender). The receive must be in front of the final unit,
       so the player has crossed back. Offside from StatsBomb events would only
-      cover passes that were flagged offside. Units and shape are as in P32
+      cover passes that were flagged offside. Units and shape are as in P25
       (FIFA clusters players into lines from tracking; the algorithm is not
       published; a unit line needs at least two players).
 
-  - id: "P40"
+  - id: "P31"
+    legacy_id: "P40"
     source:
       identifier: >-
         https://www.fifatrainingcentre.com/en/resources-tools/football-language/out-of-possession/defensive-pressure/index.php
@@ -943,7 +873,8 @@ patterns:  # 36 patterns
       forces a pass to the full-back, so it is the second half of the P01
       press-trap shape.
 
-  - id: "P41"
+  - id: "P32"
+    legacy_id: "P41"
     source:
       identifier: >-
         docs/StatsBomb_Open_Data_Specification_v1.1.pdf, play_pattern 3 /
