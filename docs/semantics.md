@@ -15,6 +15,58 @@ Plain-English rules first, symbols later. One decision per entry: what, why (and
 ## 1. Data model
 
 ### 1.1 Match
+
+A **match** is the unit a query runs over. It bundles everything recorded about one game: who played, when each period started and ended, and the data streams.
+
+```
+Match = {
+  id        : MatchId
+  source    : statsbomb | metrica
+  home, away: Team                      -- see 1.2
+  periods   : [Period]                  -- in order
+  events    : [Event]                   -- see 1.4; totally ordered (section 4)
+  frames360 : Event -> Frame?           -- StatsBomb 360 only; at most one per event
+  tracking  : [Frame]?                  -- Metrica only; 25 Hz
+  meta      : { date?, competition?, season?, stadium?, ... }   -- not queryable
+}
+
+Period = { n : 1..4, start : Instant, end : Instant }
+```
+
+Where each field comes from:
+
+| field | StatsBomb | Metrica |
+|---|---|---|
+| `id` | `match_id` | sample game number (1, 2, 3), prefixed `metrica-` |
+| `home`, `away` | `home_team`, `away_team` (id and name) | `Home`, `Away` (no names, anonymised) |
+| `periods` | `Half Start` / `Half End` events per `period` | first and last frame of each `Period` value in the tracking file |
+| `events` | events file, ordered by `index` | Metrica event file, if present (to verify once `data/` is restored) |
+| `frames360` | 360 file, joined on `event_uuid` = event `id`; empty if the match has no 360 data | none |
+| `tracking` | none | tracking files (home and away), joined on frame number |
+| `meta` | `match_date`, `competition`, `season`, `stadium`, ... | none (anonymised) |
+
+**One query, one match (decided).** A query is evaluated on one match at a time. Running it on a set of matches returns the union of the per-match results, each tagged with its match id. No pattern variable can bind to things from two different matches.
+- Why: every corpus pattern happens inside one game (P01 is written `ON match M`). Possession, the game clock and "us" only make sense inside a match.
+- Rejected: cross-match queries ("the same press in two matches in a row"). No corpus pattern needs them, and they belong to precedent retrieval (Project 4).
+
+**"Us" is a parameter of the run, not of the match (decided).** A query names roles `US` and `OPP`. A run binds `US` to one of the two teams. Running a query on a match means running it twice, once per binding, unless the analyst fixes `US` (e.g. `US = home`). Every result records which team was `US`.
+- Why: almost every pattern is written from one side ("our press", "we regain": P01, P02, P23). Coordinates already depend on this choice (1.6: +x is toward the goal `US` attacks).
+- Rejected: fixing `US = home`. That would miss half the counterpresses in the StatsBomb flag experiment (P02).
+
+**Periods 1-4 only (decided).** Periods 1 and 2 are the halves, 3 and 4 are extra time. Period 5 (penalty shootout) is dropped when loading.
+- Why: a shootout has no open play, no possession in the usual sense, and no corpus pattern refers to it.
+- Rejected: keeping it as an ordinary period. Shot-based patterns such as P20 (shot assist) could then match shootout kicks.
+
+**No pattern spans a period boundary (decided).** Each pattern match lies inside one period.
+- Why: the ball is out of play at half time, StatsBomb's `possession` restarts, and the teams swap ends. A press that "carries over" a half-time break means nothing.
+- Rejected: allowing windows across periods. Time windows over a gap of 15 minutes would be well defined on a wall clock but tactically meaningless.
+
+**Score is derived, not stored (decided).** The final score fields (`home_score`, `away_score`) are not part of the match. Instead, `score(team, t)` is computed from goal events up to instant `t` (goals from shots with outcome `Goal`, plus `Own Goal For` events).
+- Why: P21 ("dropping into a block when leading late") needs the score *at a moment*, not at the end.
+- Rejected: the final score as a match attribute. It would leak the future into a streaming run.
+
+**StatsBomb and Metrica are never joined (fact, not a choice).** They never cover the same game. A pattern that needs both events and tracking (P04, P18, P21) can only run on a Metrica match with its own events.
+
 ### 1.2 Team
 ### 1.3 Player
 ### 1.4 Event
