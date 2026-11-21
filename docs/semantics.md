@@ -99,7 +99,7 @@ Where each field comes from:
 - Rejected: a third "neutral" team for officials. No corpus pattern refers to them.
 
 **No declared formation (proposed).** StatsBomb records the formation each team says it plays (`Starting XI` and `Tactical Shift` events, e.g. 4-2-3-1). It is not part of `Team` and cannot be queried.
-- Why: the shape patterns (P05 low block, P08-P10 rest defence, P26 high line, P28 compactness) describe where players actually stand, not the label on the team sheet. They must be computed from positions (1.5), and Metrica has no formation data anyway.
+- Why: the shape patterns (P05 low block, P08-P09 rest defence, P22 horizontal compactness) describe where players actually stand, not the label on the team sheet. They must be computed from positions (1.5), and Metrica has no formation data anyway.
 - Rejected: `formation` as a team attribute. Queries could then match the provider's label instead of the shape, and would not run on Metrica.
 
 **Team metadata is not queryable (decided).** Managers, country, gender and group (StatsBomb) go into `Match.meta` with the rest of the descriptive fields.
