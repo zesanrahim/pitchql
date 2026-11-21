@@ -70,7 +70,9 @@ StatsBomb 360 frames only show players inside a `visible_area` polygon. Each can
 - Types: Event, Player, PlayerSet, Team, Role, Zone, Location, Instant, Interval, Possession, Frame
 
 ## Corpus rules
-- Single versioned JSON file in the repo. Each entry: source id and retrieval date, verbatim sentence, our paraphrase, concept name, constructs exercised, data model needed, split (design or holdout).
+- Current corpus: `corpus/corpus_2.yaml` (v0.3.0, 32 patterns, P01-P32). Cite pattern ids from this file.
+- `corpus/corpus.json` (v0.1.0, 44 patterns) is kept unchanged as the record; `legacy_id` in v0.3.0 points to its labels. Do not use its ids.
+- Each entry: source id and retrieval date, verbatim sentence, our paraphrase, concept name, constructs exercised, data model needed, split (design or holdout).
 - Chosen for construct diversity (negation, repetition, set quantifiers, nested windows), not representativeness.
 - Design set comes from provider specs, then coaching writing.
 - Holdout set is gathered only after the freeze date and evaluated once. Never look at it before the freeze.
