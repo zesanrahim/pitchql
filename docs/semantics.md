@@ -68,6 +68,47 @@ Where each field comes from:
 **StatsBomb and Metrica are never joined (fact, not a choice).** They never cover the same game. A pattern that needs both events and tracking (P04, P18, P21) can only run on a Metrica match with its own events.
 
 ### 1.2 Team
+
+A **team** is one of the two sides in a match. It only has meaning inside its match: since a query runs on one match (1.1), nothing about a team carries over to another match.
+
+```
+Team = {
+  id   : TeamId
+  name : string?                -- none for Metrica (anonymised)
+  side : home | away
+}
+
+Role = US | OPP
+team : Role -> Team             -- fixed by the run (1.1); team(OPP) is the other team
+```
+
+Where each field comes from:
+
+| field | StatsBomb | Metrica |
+|---|---|---|
+| `id` | `home_team_id` / `away_team_id` in the match file; `team.id` on events | `Home`, `Away` (the `Team` column and the tracking file names) |
+| `name` | `home_team_name` / `away_team_name` | none |
+| `side` | which of `home_team` / `away_team` it is | `Home` or `Away` |
+
+**Queries name roles, never teams (decided).** The language has no team literals. A condition such as `team = US` compares an event's team with whatever team the run bound to `US`. To look at one club, the analyst fixes the binding when running the query (e.g. `US = home`); the query does not change.
+- Why: every corpus pattern is written from a point of view ("our press", "their half"), never about a named club. A query that names "Italy" can't be reused on another match.
+- Rejected: team names or ids as literals. They tie a query to one dataset, and Metrica has no names at all.
+
+**Exactly two teams; officials and the ball are not teams (decided).** Each player belongs to exactly one of the two teams for the whole match. Referees (present in some tracking feeds) are dropped when loading. The ball is its own object, not a member of either team (see 1.5).
+- Why: `US`/`OPP` and the mirroring rule in 1.6 both need every player to be on exactly one side.
+- Rejected: a third "neutral" team for officials. No corpus pattern refers to them.
+
+**No declared formation (proposed).** StatsBomb records the formation each team says it plays (`Starting XI` and `Tactical Shift` events, e.g. 4-2-3-1). It is not part of `Team` and cannot be queried.
+- Why: the shape patterns (P05 low block, P08-P10 rest defence, P26 high line, P28 compactness) describe where players actually stand, not the label on the team sheet. They must be computed from positions (1.5), and Metrica has no formation data anyway.
+- Rejected: `formation` as a team attribute. Queries could then match the provider's label instead of the shape, and would not run on Metrica.
+
+**Team metadata is not queryable (decided).** Managers, country, gender and group (StatsBomb) go into `Match.meta` with the rest of the descriptive fields.
+- Why: no corpus pattern uses them.
+
+**Team-level measures are functions, not fields.** Quantities such as a team's width, the height of its back line, or its compactness change from frame to frame, so they are not stored on `Team`. They are defined later as functions of a team's player positions at an instant (1.5 and section 2).
+
+**Which team has the ball is not a team attribute.** StatsBomb's `possession_team` is a property of an event and of a possession, and is covered with possession (open question above).
+
 ### 1.3 Player
 ### 1.4 Event
 ### 1.5 Frame (360 freeze frame; tracking frame at 25 Hz)
