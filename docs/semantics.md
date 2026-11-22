@@ -68,7 +68,95 @@ Where each field comes from:
 **StatsBomb and Metrica are never joined (fact, not a choice).** They never cover the same game. A pattern that needs both events and tracking (P04, P18, P21) can only run on a Metrica match with its own events.
 
 ### 1.2 Team
+
+A **team** is one of the two sides in a match. It only has meaning inside its match: since a query runs on one match (1.1), nothing about a team carries over to another match.
+
+```
+Team = {
+  id   : TeamId
+  name : string?                -- none for Metrica (anonymised)
+  side : home | away
+}
+
+Role = US | OPP
+team : Role -> Team             -- fixed by the run (1.1); team(OPP) is the other team
+```
+
+Where each field comes from:
+
+| field | StatsBomb | Metrica |
+|---|---|---|
+| `id` | `home_team_id` / `away_team_id` in the match file; `team.id` on events | `Home`, `Away` (the `Team` column and the tracking file names) |
+| `name` | `home_team_name` / `away_team_name` | none |
+| `side` | which of `home_team` / `away_team` it is | `Home` or `Away` |
+
+**Queries name roles, never teams (decided).** The language has no team literals. A condition such as `team = US` compares an event's team with whatever team the run bound to `US`. To look at one club, the analyst fixes the binding when running the query (e.g. `US = home`); the query does not change.
+- Why: every corpus pattern is written from a point of view ("our press", "their half"), never about a named club. A query that names "Italy" can't be reused on another match.
+- Rejected: team names or ids as literals. They tie a query to one dataset, and Metrica has no names at all.
+
+**Exactly two teams; officials and the ball are not teams (decided).** Each player belongs to exactly one of the two teams for the whole match. Referees (present in some tracking feeds) are dropped when loading. The ball is its own object, not a member of either team (see 1.5).
+- Why: `US`/`OPP` and the mirroring rule in 1.6 both need every player to be on exactly one side.
+- Rejected: a third "neutral" team for officials. No corpus pattern refers to them.
+
+**No declared formation (proposed).** StatsBomb records the formation each team says it plays (`Starting XI` and `Tactical Shift` events, e.g. 4-2-3-1). It is not part of `Team` and cannot be queried.
+- Why: the shape patterns (P05 low block, P08-P09 rest defence, P22 horizontal compactness) describe where players actually stand, not the label on the team sheet. They must be computed from positions (1.5), and Metrica has no formation data anyway.
+- Rejected: `formation` as a team attribute. Queries could then match the provider's label instead of the shape, and would not run on Metrica.
+
+**Team metadata is not queryable (decided).** Managers, country, gender and group (StatsBomb) go into `Match.meta` with the rest of the descriptive fields.
+- Why: no corpus pattern uses them.
+
+**Team-level measures are functions, not fields.** Quantities such as a team's width, the height of its back line, or its compactness change from frame to frame, so they are not stored on `Team`. They are defined later as functions of a team's player positions at an instant (1.5 and section 2).
+
+**Which team has the ball is not a team attribute.** StatsBomb's `possession_team` is a property of an event and of a possession, and is covered with possession (open question above).
+
 ### 1.3 Player
+
+A **player** is one person on one of the two teams. Like a team, a player only has meaning inside its match.
+
+```
+Player = {
+  id   : PlayerId
+  team : Team                       -- fixed for the whole match (1.2)
+}
+
+keeper   : Player x Instant -> bool         -- is the player in goal at t
+on_pitch : Player x Instant -> bool         -- is the player on the pitch at t
+players  : Role x Instant -> PlayerSet      -- the team's players on the pitch at t
+```
+
+Where each part comes from:
+
+| part | StatsBomb | Metrica |
+|---|---|---|
+| `id` | `player.id` | tracking column name (`Player1` ... `Player28`), prefixed `metrica-` |
+| `team` | team of the `Starting XI` or `Substitution` event that brings the player on | which tracking file (home or away) the column is in |
+| `keeper` | position `Goalkeeper` in `Starting XI`, `Tactical Shift` and `Substitution` events | not given; must be inferred (to verify on the sample) |
+| `on_pitch` | from `Starting XI`, `Substitution`, `Player Off` / `Player On`, and red cards | position is not `NaN` in the tracking file |
+| name, shirt number | `player.name`, `jersey_number` (into `meta`) | shirt number from the tracking header (into `meta`) |
+
+**Queries name no players (decided).** As with teams (1.2), the language has no player literals. Patterns talk about players through what they do or where they are ("the passer", "players ahead of the ball"), never by name. Names and shirt numbers go into `meta`.
+- Why: no corpus pattern names a player, and Metrica players are anonymised.
+- Rejected: player names or ids in queries. To look at one player, the analyst filters the results.
+
+**360 freeze frames do not identify players (fact, not a choice).** A 360 frame lists positions with three flags: `teammate` (same team as the event's actor), `actor` (the player doing the event) and `keeper`. There is no player id. So in a 360 frame, a query can count and quantify over positions ("at least three of our players ahead of the ball", P01), but cannot ask which player stands where, or follow a player from one frame to the next. Only the actor is linked to a `Player`, through the event. The `teammate` flag is turned into `US` / `OPP` when loading, using the actor's team. (Frame contents are defined in 1.5.)
+
+**The only declared position is goalkeeper (decided).** `keeper(p, t)` is part of the data model. Other positions (full-back, centre-back, winger) are not: they are worked out from where players stand, like the shape patterns in 1.2.
+- Why: several patterns need keeper vs outfield players (P23 "outfield players", P30 "second-last defender", which counts the keeper). It is the one position all sources can give: StatsBomb events and the 360 `keeper` flag have it directly, and Metrica can infer it. Patterns that name other positions (P04 and P31 "full-back") mean where the player is, not the label.
+- Rejected: StatsBomb's `position.name` (about 25 values) as a queryable field. 360 frames and Metrica don't have it, and it would make "full-back" mean the team-sheet label. This follows the same reasoning as "No declared formation" in 1.2.
+
+**Who is on the pitch changes over time (decided).** `players(R, t)` is the set of players of team `R` on the pitch at instant `t`. It returns `Player` values (id and team), not a count and not positions: `count(players(R, t))` gives the number, and where a player stands comes from a frame (1.5). Substitutions, temporary exits (`Player Off` / `Player On`, e.g. injury treatment) and red cards change it.
+- Why: counts such as P01's "at least three players ahead of the ball" must not include substitutes or sent-off players.
+- Rejected: a fixed set of eleven per team. It would be wrong after every red card.
+
+**Lineup changes take effect at their place in the event order (proposed).** A substitution, temporary exit or red card changes `players(R, ·)` from the next event in the total order (section 4), not from its timestamp. So if a `Substitution` and a pass share a timestamp, the substitute is on the pitch for the pass only if the pass comes after the substitution in StatsBomb's `index` order. A tracking frame sees every change from events at an earlier or equal time.
+- Why: two events can share a timestamp, and the answer must not depend on how ties happen to be broken. In practice substitutions happen while the ball is out of play, so such ties should be rare.
+- Depends on: the total-order rule (open question above).
+
+**Metrica: on the pitch from first to last tracked frame (proposed).** A Metrica player is on the pitch from their first non-`NaN` frame to their last non-`NaN` frame in each period. A `NaN` inside that span means the player is on the pitch but their position is unknown, so conditions on that player's position evaluate to unknown, as for a player outside the 360 visible area. If the Metrica event file has substitution events, they are used instead (to verify).
+- Why: a `NaN` can mean "substituted off" or "not tracked for a moment", and the two must not be confused. A substituted player cannot come back on, so a player's span has no real gaps from substitutions.
+- Known limit: a temporary exit (e.g. injury treatment) also shows as a `NaN` gap, so the player counts as on the pitch with an unknown position while actually off. This can turn a definite answer into unknown, but never into a wrong true or false.
+- Rejected: treating every `NaN` frame as off the pitch. A short tracking dropout would then remove a player from counts such as P01's.
+
 ### 1.4 Event
 ### 1.5 Frame (360 freeze frame; tracking frame at 25 Hz)
 ### 1.6 Coordinates and pitch
