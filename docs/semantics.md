@@ -185,7 +185,61 @@ An **event** is one recorded thing in the match data (a pass, a tackle, a shot).
 
 **Source loading notes:** IDSSE events include 108 `Delete` events that retract earlier events; apply them at load (D-007). IDSSE goals come from `ShotAtGoal/SuccessfulShot` (own goals still to check) (D-006).
 
-### 1.5 Frame (360 freeze frame; tracking frame at 25 Hz)
+### 1.5 Frame **[PROPOSED, to be approved]**
+
+A **frame** is a snapshot of where the players and the ball are at one instant. There are two kinds: a **360 freeze frame** (StatsBomb: one per event, shows only part of the pitch) and a **tracking frame** (IDSSE or Metrica: 25 Hz, whole pitch). Both have one shape, so a condition such as "three of our players ahead of the ball" (P01) is written once and runs on either.
+
+```
+Frame = {
+  kind    : freeze | tracking
+  time    : Instant                  -- (period, t), see 1.7
+  ball    : Location | unknown
+  seen    : Region                   -- where players are listed: the 360 visible_area, or the whole pitch
+  players : [PlayerPos]              -- only players inside `seen`
+}
+
+PlayerPos = {
+  team   : US | OPP
+  loc    : Location | unknown        -- canonical coordinates (1.6)
+  player : Player | none             -- tracking: the player; 360: none, except the actor (1.3)
+  actor  : bool                      -- 360 only
+  keeper : bool
+}
+```
+
+Where each part comes from:
+
+| part | StatsBomb 360 | Tracking (IDSSE, Metrica) |
+|---|---|---|
+| `kind` | `freeze` | `tracking` |
+| `time` | inherits its event's time (1.7) | frame time, one frame every 0.04 s (1.7) |
+| `ball` | the event's `location` (the freeze frame has no ball entry; to verify) | ball position in the frame; Metrica can be `NaN` |
+| `seen` | `visible_area` polygon | whole pitch |
+| `players` | `freeze_frame` positions | every player on the pitch (1.3); Metrica players with `NaN` are listed with `loc` unknown |
+| `team` | `teammate` flag, read against the actor's team (1.3) | which team the tracking column belongs to |
+| `player` | none, except the actor, via the event (1.3) | player id (IDSSE) or column name (Metrica) |
+| `keeper` | `keeper` flag | `keeper(p, t)` from 1.3 |
+
+Not every event has a 360 frame (to verify on the sample), so `frames360` (1.1) can be empty for an event.
+
+**A frame is one instant (proposed).** It stores positions only. Anything over time (a velocity, a line-breaking run, compactness collapsing) is built from a sequence of frames, with interval meaning given in sections 2 and 4.
+- Why: the program document asks for interval-valued state, and tracking frames already form the sequence. Storing intervals inside a frame would duplicate that.
+- Rejected: velocity or run intervals as stored frame fields.
+
+**A frame lists only what the source saw, and `seen` says where (proposed).** A player missing from a 360 frame may be off the visible area, not off the pitch. Tracking frames have `seen` = the whole pitch. The frame does not decide true, false or unknown; the visible-area rule is still an open question and is written against `seen`.
+- Likely direction, not decided: a count or "none" over a region R is definite only when R lies inside `seen`; otherwise it can be unknown.
+- Why: without `seen`, a missing player and an unseen player look the same.
+
+**Speed and acceleration are computed from positions (proposed).** The language's `speed` comes from the distance between frames over time, so it means the same on IDSSE and Metrica. IDSSE's own per-frame speed and acceleration are kept as optional extras and used only to check our values (D-001, independence hygiene). The length of the time step is set in section 2.
+- Rejected: using the provider's speed in the language (only IDSSE has it, and there would be nothing independent to check against).
+
+**Missing positions use "unknown" (proposed).** As in D-022, a player who is on the pitch but has no position in a tracking frame is listed with `loc` unknown, so a condition on that position is unknown. A player who is off the pitch is not listed.
+
+**360 frames take their event's time and ball position (proposed).** A freeze frame has no time of its own (1.7), and no ball entry, so the ball is taken to be at the event's `location`.
+- Consequence: P01's "ahead of the ball at the regain" on StatsBomb means ahead of where the regain was recorded. This is an approximation.
+
+**Still open in 1.5:** how events line up with 25 Hz frames (1.7); the visible-area rule (open question above).
+
 ### 1.6 Coordinates and pitch
 
 Source systems:
@@ -413,3 +467,28 @@ Template:
 - **Decision:** an event field is in one of three states. It has a value; it is **none** (does not apply, e.g. the recipient of a failed pass), so a condition on it is false; or it is **unknown** (the source should have it but does not, e.g. a missing location), so a condition on it is unknown.
 - **Why:** a failed pass is recorded data, not missing data. In the IDSSE sample, completed passes carry a `Recipient` and unsuccessful ones do not. Treating that as unknown would wrongly turn real results into "possible".
 - **Status:** agreed Kieran for now; team not yet confirmed. May change once the visible-area question (open) is settled.
+
+### D-023: One frame shape for 360 freeze frames and tracking frames (1.5)
+- **Decision:** both kinds share `kind`, `time`, `ball`, `seen` and `players`. 360 frames have `seen` = `visible_area`, tracking frames have the whole pitch.
+- **Why / forced by:** P01 ("three players ahead of the ball") must run on either source.
+- **Rejected:** two separate frame types (every pattern would be written twice).
+- **Status:** proposed, to be approved.
+
+### D-024: A frame is one instant; time-based state is built from frame sequences (1.5)
+- **Decision:** frames hold positions only. Velocity, runs and compactness collapsing are defined over sequences of frames in sections 2 and 4.
+- **Why:** the program document needs interval-valued state; frames already form the sequence.
+- **Rejected:** storing intervals or velocities in the frame.
+- **Status:** proposed, to be approved.
+
+### D-025: Speed and acceleration are computed from positions (1.5)
+- **Decision:** the language computes `speed` itself, the same on IDSSE and Metrica. IDSSE's per-frame values are optional extras used only for checking.
+- **Why:** one meaning across sources, and something independent to check against (D-001).
+- **Rejected:** using the provider's values in the language.
+- **Open:** the time step used for the difference (section 2).
+- **Status:** proposed, to be approved.
+
+### D-026: 360 frames inherit their event's time and ball position (1.5)
+- **Decision:** a freeze frame takes the time of its event (1.7) and puts the ball at the event's `location`.
+- **Why:** the freeze frame has neither.
+- **Consequence:** an approximation for "ahead of the ball" patterns on StatsBomb (P01).
+- **Status:** proposed, to be approved. Ball entry to verify when `data/` is restored.
