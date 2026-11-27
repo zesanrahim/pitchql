@@ -11,7 +11,7 @@ Plain-English rules first, symbols later. One decision per entry: what, why (and
 - [ ] What counts as one possession, and do patterns reset when it changes
 - [~] Which clock do time windows use: game clock (see 1.7). [PROPOSED by Kieran, to be approved]
 - [ ] Negation over intervals; repetition
-- [ ] Players outside the 360 `visible_area` (true / false / unknown)
+- [~] Players outside the 360 `visible_area`: try every placement of the unseen players (see 1.5). [PROPOSED, to be approved]
 - [ ] Press-trap: "ahead of the ball" measured at the regain or at the next pass
 - [ ] Press-trap: "regain" as any touch or as established control
 
@@ -226,9 +226,31 @@ Not every event has a 360 frame (to verify on the sample), so `frames360` (1.1) 
 - Why: the program document asks for interval-valued state, and tracking frames already form the sequence. Storing intervals inside a frame would duplicate that.
 - Rejected: velocity or run intervals as stored frame fields.
 
-**A frame lists only what the source saw, and `seen` says where (proposed).** A player missing from a 360 frame may be off the visible area, not off the pitch. Tracking frames have `seen` = the whole pitch. The frame does not decide true, false or unknown; the visible-area rule is still an open question and is written against `seen`.
-- Likely direction, not decided: a count or "none" over a region R is definite only when R lies inside `seen`; otherwise it can be unknown.
+**A frame lists only what the source saw, and `seen` says where (proposed).** A player missing from a 360 frame may be off the visible area, not off the pitch. Tracking frames have `seen` = the whole pitch. The frame itself does not decide true, false or unknown; the rule below does.
 - Why: without `seen`, a missing player and an unseen player look the same.
+
+**Unseen players: try every placement (proposed).** For each team, the **unseen** players are the players on the pitch at the frame's time (`players(R, t)`, 1.3) minus the players listed in the frame. Each unseen player is somewhere on the pitch, outside `seen`. A **completion** of the frame is one choice of a point for every unseen player. A condition that looks at positions is then:
+- **true** if it holds in every completion (definite),
+- **false** if it holds in no completion (discarded),
+- **unknown** otherwise (possible).
+
+Conditions combine with three-valued AND, OR and NOT. A pattern match is true if all its conditions are true, false if any is false, and unknown otherwise. The analyst may discard the unknown (possible) matches.
+
+How it is computed: the interpreter does not list completions. For a count over a region R, the lowest value is the listed players inside R, and the highest is that number plus the unseen players who could be in R. That is none if R lies inside `seen`, and at most the number of unseen players otherwise. "At least k" is true if the lowest value is at least k, false if the highest is below k, and unknown in between. Order measures such as "the last defender" (P30) are handled the same way, as a range of positions.
+
+Worked case (P01, "at least 3 of our players ahead of the ball"): 11 of our players on the pitch, 8 listed, so 3 unseen; 2 listed players are ahead of the ball.
+- If the area ahead of the ball reaches outside `seen`, the count is 2 to 5, so the condition is unknown.
+- If the whole area ahead of the ball is inside `seen`, the unseen players cannot be there, the count is 2, and the condition is false.
+
+Other cases:
+- **No 360 frame for the event:** `seen` is empty, so every position condition is unknown.
+- **Tracking frames:** `seen` is the whole pitch, so there are no unseen players. A listed player with `loc` unknown (a `NaN`) can be anywhere on the pitch, which gives the same rule as the "unknown" in 1.3 and D-022.
+- **Event fields** are never affected by the visible area.
+
+- Why: it gives a definite false when the data allows one (the unseen players cannot be in the area asked about), and unknown only when the data really cannot tell. This matches the true / unknown / false meaning in the project idea.
+- Cost: three-valued AND ignores that one unseen player can appear in two conditions, so it can give unknown where the exact answer is definite. It never gives a wrong true or false.
+- Assumption to verify (needs `data/`): the 360 list is complete inside the visible area, so a player missing from the list is outside it.
+- Rejected: "unknown whenever the region touches outside `seen`" (simpler, but never gives a definite false for a count); guessing where unseen players probably are (for example "deep defenders are usually unseen", P08, P09), which would put a guess inside a definite answer.
 
 **Speed and acceleration are computed from positions (proposed).** The language's `speed` comes from the distance between frames over time, so it means the same on IDSSE and Metrica. IDSSE's own per-frame speed and acceleration are kept as optional extras and used only to check our values (D-001, independence hygiene). The length of the time step is set in section 2.
 - Rejected: using the provider's speed in the language (only IDSSE has it, and there would be nothing independent to check against).
@@ -238,7 +260,7 @@ Not every event has a 360 frame (to verify on the sample), so `frames360` (1.1) 
 **360 frames take their event's time and ball position (proposed).** A freeze frame has no time of its own (1.7), and no ball entry, so the ball is taken to be at the event's `location`.
 - Consequence: P01's "ahead of the ball at the regain" on StatsBomb means ahead of where the regain was recorded. This is an approximation.
 
-**Still open in 1.5:** how events line up with 25 Hz frames (1.7); the visible-area rule (open question above).
+**Still open in 1.5:** how events line up with 25 Hz frames (1.7).
 
 ### 1.6 Coordinates and pitch
 
@@ -492,3 +514,11 @@ Template:
 - **Why:** the freeze frame has neither.
 - **Consequence:** an approximation for "ahead of the ball" patterns on StatsBomb (P01).
 - **Status:** proposed, to be approved. Ball entry to verify when `data/` is restored.
+
+### D-027: Unseen players: a condition is true, false or unknown by trying every placement (1.5)
+- **Decision:** the unseen players of a team are those on the pitch (1.3) but not listed in the frame. A condition is true if it holds for every way of placing them outside `seen`, false if for none, and unknown otherwise. Conditions combine with three-valued AND, OR and NOT. Counts and order measures are computed as a lowest and highest possible value. A missing frame means `seen` is empty.
+- **Why / forced by:** P08, P09, P16, P17, P19 and P24 all say that players outside the visible area make the answer unknown or a range.
+- **Rejected:** unknown whenever the region touches outside `seen`; guessing where unseen players are.
+- **Cost:** can give unknown where the exact answer is definite (shared unseen players across conditions); never a wrong true or false.
+- **To verify:** the 360 list is complete inside the visible area (needs `data/`).
+- **Status:** proposed, to be approved.
