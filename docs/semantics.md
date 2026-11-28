@@ -8,10 +8,10 @@ Plain-English rules first, symbols later. One decision per entry: what, why (and
 
 - [~] Total order over events with equal or duplicate timestamps: sequencing uses (period, t, seq), windows use the clock only (see 1.7). [PROPOSED by Kieran, to be approved; provisional]
 - [~] Which 25 Hz tracking source: IDSSE. [PROPOSED by Kieran, to be approved] (see D-001). Metrica stays as a fallback sample
-- [ ] What counts as one possession, and do patterns reset when it changes
+- [~] What counts as one possession, and do patterns reset when it changes: defined from controlling events; no reset by default, scoping is opt-in (see 1.8). [PROPOSED, to be approved]
 - [~] Which clock do time windows use: game clock (see 1.7). [PROPOSED by Kieran, to be approved]
 - [ ] Negation over intervals; repetition
-- [ ] Players outside the 360 `visible_area` (true / false / unknown)
+- [~] Players outside the 360 `visible_area`: try every placement of the unseen players (see 1.5). [PROPOSED, to be approved]
 - [ ] Press-trap: "ahead of the ball" measured at the regain or at the next pass
 - [ ] Press-trap: "regain" as any touch or as established control
 
@@ -185,7 +185,83 @@ An **event** is one recorded thing in the match data (a pass, a tackle, a shot).
 
 **Source loading notes:** IDSSE events include 108 `Delete` events that retract earlier events; apply them at load (D-007). IDSSE goals come from `ShotAtGoal/SuccessfulShot` (own goals still to check) (D-006).
 
-### 1.5 Frame (360 freeze frame; tracking frame at 25 Hz)
+### 1.5 Frame **[PROPOSED, to be approved]**
+
+A **frame** is a snapshot of where the players and the ball are at one instant. There are two kinds: a **360 freeze frame** (StatsBomb: one per event, shows only part of the pitch) and a **tracking frame** (IDSSE or Metrica: 25 Hz, whole pitch). Both have one shape, so a condition such as "three of our players ahead of the ball" (P01) is written once and runs on either.
+
+```
+Frame = {
+  kind    : freeze | tracking
+  time    : Instant                  -- (period, t), see 1.7
+  ball    : Location | unknown
+  seen    : Region                   -- where players are listed: the 360 visible_area, or the whole pitch
+  players : [PlayerPos]              -- only players inside `seen`
+}
+
+PlayerPos = {
+  team   : US | OPP
+  loc    : Location | unknown        -- canonical coordinates (1.6)
+  player : Player | none             -- tracking: the player; 360: none, except the actor (1.3)
+  actor  : bool                      -- 360 only
+  keeper : bool
+}
+```
+
+Where each part comes from:
+
+| part | StatsBomb 360 | Tracking (IDSSE, Metrica) |
+|---|---|---|
+| `kind` | `freeze` | `tracking` |
+| `time` | inherits its event's time (1.7) | frame time, one frame every 0.04 s (1.7) |
+| `ball` | the event's `location` (the freeze frame has no ball entry; to verify) | ball position in the frame; Metrica can be `NaN` |
+| `seen` | `visible_area` polygon | whole pitch |
+| `players` | `freeze_frame` positions | every player on the pitch (1.3); Metrica players with `NaN` are listed with `loc` unknown |
+| `team` | `teammate` flag, read against the actor's team (1.3) | which team the tracking column belongs to |
+| `player` | none, except the actor, via the event (1.3) | player id (IDSSE) or column name (Metrica) |
+| `keeper` | `keeper` flag | `keeper(p, t)` from 1.3 |
+
+Not every event has a 360 frame (to verify on the sample), so `frames360` (1.1) can be empty for an event.
+
+**A frame is one instant (proposed).** It stores positions only. Anything over time (a velocity, a line-breaking run, compactness collapsing) is built from a sequence of frames, with interval meaning given in sections 2 and 4.
+- Why: the program document asks for interval-valued state, and tracking frames already form the sequence. Storing intervals inside a frame would duplicate that.
+- Rejected: velocity or run intervals as stored frame fields.
+
+**A frame lists only what the source saw, and `seen` says where (proposed).** A player missing from a 360 frame may be off the visible area, not off the pitch. Tracking frames have `seen` = the whole pitch. The frame itself does not decide true, false or unknown; the rule below does.
+- Why: without `seen`, a missing player and an unseen player look the same.
+
+**Unseen players: try every placement (proposed).** For each team, the **unseen** players are the players on the pitch at the frame's time (`players(R, t)`, 1.3) minus the players listed in the frame. Each unseen player is somewhere on the pitch, outside `seen`. A **completion** of the frame is one choice of a point for every unseen player. A condition that looks at positions is then:
+- **true** if it holds in every completion (definite),
+- **false** if it holds in no completion (discarded),
+- **unknown** otherwise (possible).
+
+Conditions combine with three-valued AND, OR and NOT. A pattern match is true if all its conditions are true, false if any is false, and unknown otherwise. The analyst may discard the unknown (possible) matches.
+
+How it is computed: the interpreter does not list completions. For a count over a region R, the lowest value is the listed players inside R, and the highest is that number plus the unseen players who could be in R. That is none if R lies inside `seen`, and at most the number of unseen players otherwise. "At least k" is true if the lowest value is at least k, false if the highest is below k, and unknown in between. Order measures such as "the last defender" (P30) are handled the same way, as a range of positions.
+
+Worked case (P01, "at least 3 of our players ahead of the ball"): 11 of our players on the pitch, 8 listed, so 3 unseen; 2 listed players are ahead of the ball.
+- If the area ahead of the ball reaches outside `seen`, the count is 2 to 5, so the condition is unknown.
+- If the whole area ahead of the ball is inside `seen`, the unseen players cannot be there, the count is 2, and the condition is false.
+
+Other cases:
+- **No 360 frame for the event:** `seen` is empty, so every position condition is unknown.
+- **Tracking frames:** `seen` is the whole pitch, so there are no unseen players. A listed player with `loc` unknown (a `NaN`) can be anywhere on the pitch, which gives the same rule as the "unknown" in 1.3 and D-022.
+- **Event fields** are never affected by the visible area.
+
+- Why: it gives a definite false when the data allows one (the unseen players cannot be in the area asked about), and unknown only when the data really cannot tell. This matches the true / unknown / false meaning in the project idea.
+- Cost: three-valued AND ignores that one unseen player can appear in two conditions, so it can give unknown where the exact answer is definite. It never gives a wrong true or false.
+- Assumption to verify (needs `data/`): the 360 list is complete inside the visible area, so a player missing from the list is outside it.
+- Rejected: "unknown whenever the region touches outside `seen`" (simpler, but never gives a definite false for a count); guessing where unseen players probably are (for example "deep defenders are usually unseen", P08, P09), which would put a guess inside a definite answer.
+
+**Speed and acceleration are computed from positions (proposed).** The language's `speed` comes from the distance between frames over time, so it means the same on IDSSE and Metrica. IDSSE's own per-frame speed and acceleration are kept as optional extras and used only to check our values (D-001, independence hygiene). The length of the time step is set in section 2.
+- Rejected: using the provider's speed in the language (only IDSSE has it, and there would be nothing independent to check against).
+
+**Missing positions use "unknown" (proposed).** As in D-022, a player who is on the pitch but has no position in a tracking frame is listed with `loc` unknown, so a condition on that position is unknown. A player who is off the pitch is not listed.
+
+**360 frames take their event's time and ball position (proposed).** A freeze frame has no time of its own (1.7), and no ball entry, so the ball is taken to be at the event's `location`.
+- Consequence: P01's "ahead of the ball at the regain" on StatsBomb means ahead of where the regain was recorded. This is an approximation.
+
+**Still open in 1.5:** how events line up with 25 Hz frames (1.7).
+
 ### 1.6 Coordinates and pitch
 
 Source systems:
@@ -263,6 +339,98 @@ How `seq` is assigned per source:
 - **Not affected:** tracking state is interval-valued regardless (required by the program document); that is separate from event durations.
 
 **Still open in 1.7:** how events line up with 25 Hz frames (including: does an event at time `t` see the frame at `t`?).
+
+### 1.8 Possession **[PROPOSED, to be approved]**
+
+A **possession** is a stretch of play in which one team has the ball. It lies inside one period (D-005).
+
+```
+Possession = { team : Role, period : 1..4, start : Instant, end : Instant }
+possession : Event -> Possession      -- the possession the event falls in (events of either team)
+```
+
+**The language defines possession itself (proposed).** A *controlling event* is a pass, cross, shot, set-piece restart, or recovery (this includes an interception or a won tackle). Every source records these or can derive them (D-019). Then:
+- A possession for team T starts at the first controlling event by T after the other team held the ball, or at the first controlling event of a period (the kick-off).
+- It continues through any events, of either team, that are not controlling (a pressure, a lost duel, a foul committed).
+- It ends just before the other team's next controlling event, or at the end of the period.
+- A dead-ball stop does not end it (D-005). A throw-in or free kick taken by the same team does not change the holder. One taken by the other team does, because the restart is that team's controlling event.
+- StatsBomb's own `possession` and `possession_team` are kept as optional extras, for diagnosing disagreements only.
+- Why: StatsBomb has it, IDSSE events do not (to verify), and the counterpress flag (P02) has to be rebuilt from raw primitives, so borrowing the provider's possession chain would leak its logic into our answer.
+- Rejected: using the provider's possession as the definition (differs by source, not independent).
+- To hand-check: after shots, clearances and keeper saves, where the rule may split or merge possessions.
+
+**Patterns do not reset when possession changes (proposed).** Possession is a scope the author asks for, not a default boundary. A pattern may say `within possession`, which confines the matched events to one possession.
+- Why: P01 and P02 cross a possession change by design (the opponent's pass, then our regain), so a default reset would stop them matching. P10, P11, P13, P20 and P32 are written about one team's passage of play and ask for the scope.
+- Rejected: reset on every change (breaks P01, P02, P23); never scope (P10, P11 would need hand-written checks).
+
+**Related definitions.** A turnover (D-021, P02, P23, P24) can now be defined in section 3 as a change of holder that is not a restart by the same team. "Regain" in the press-trap (any touch or established control) is a separate open question and is not decided here. A frame's holder is the holder at the latest event at or before the frame time, which depends on the event-to-frame alignment still open in 1.7.
+
+### 1.9 Zone **[PROPOSED, to be approved]**
+
+A **zone** is a named region of the canonical pitch (1.6). `zone(loc) IN Z` tests whether a point is inside it.
+
+```
+Region = a set of points in the canonical pitch
+Zone   = { name : string, region : Region }
+```
+
+**Names that say left, right, third or attacking depend on whose view is meant (proposed).** A zone is written `Name@R`, with `R` a role (1.2). `@US` is the default. `Name@OPP` is the same region seen from the opponent's side, which is the canonical region mirrored in x and y (1.6).
+- Why: canonical coordinates point toward the goal `US` attacks, so `y > 0` is `US`'s left. P01's `zone(b.loc) IN LeftBuildupThird` applies to an `OPP` pass, so "left" could mean our left or theirs. The author must choose. `LeftBuildupThird@OPP` is x >= 17.5 and y <= -11.33; `@US` would be the opposite side of the pitch. This is a fourth ambiguity, next to the three in the program document.
+- Rejected: names fixed to the canonical view (silently wrong for opponent events); a view picked automatically from the event's team (hides the choice).
+
+**Library of zones (placeholder numbers).** In the `US` view, in canonical metres:
+- Thirds by x: `DefThird` (x <= -17.5), `MidThird`, `AttThird` (x >= 17.5).
+- Halves: `OwnHalf` (x <= 0), `OppHalf` (x >= 0), as in 1.6.
+- Lateral thirds by y: `Left` (y >= 11.33), `Centre`, `Right` (y <= -11.33).
+- Zones combine by intersection: `LeftBuildupThird` = `Left` and `DefThird`.
+- The author can also define a zone as a rectangle or polygon in canonical metres.
+- The numbers are placeholders: the sources give none (P01, P12, P16), and StatsBomb's own 120 x 80 lines are not the same as ours after conversion. Review them against hand-checked cases.
+
+Zones are closed (the boundary belongs to the zone) and may overlap. A zone is a `Region`, so the visible-area rule (1.5) can test whether it lies inside `seen`. A point whose position is unknown follows 1.5.
+
+### 1.10 Interval **[PROPOSED, to be approved]**
+
+An **interval** is a stretch of game-clock time inside one period.
+
+```
+Interval = { period : 1..4, start : t, end : t }      -- start <= end, both ends included
+```
+
+A single frame is an interval with start = end. An interval cannot span two periods (D-005). Events and frames use the same clock (1.7), so an instant `t` is *in* an interval if `start <= t <= end`. This is how instantaneous events and interval-valued state meet. How an event between two frames lines up with a frame is the open alignment question in 1.7.
+
+**State over time gives definite and possible intervals (proposed).** A condition on positions (for example "speed > 7 m/s", "back line below 30 m") is evaluated frame by frame to true, false or unknown (1.5). Frames in a tracking feed are 0.04 s apart. Then:
+- a **definite interval** is a maximal run of consecutive frames where the condition is true,
+- a **possible interval** is a maximal run where it is true or unknown (so each contains the definite ones inside it).
+
+"Holds throughout [a, b]" is true if every frame in [a, b] is true, false if any frame is false, and unknown otherwise.
+- Why: the program document asks for interval semantics, and this is the same true / unknown / false meaning as 1.5 applied along time.
+- Operations the corpus needs (written in section 2): `in` (instant inside interval), `throughout` (P05 "only engage", P08 "across the whole possession"), `meets` (P28: the second movement starts where the first ends), `for at least d` and a largest gap to bridge (P14 runs, P28 "no pause").
+- Used by: a possession (1.8) is an interval with a team. Event `end` and `during`, if added later (1.7), use this same type.
+- Only tracking has regular frames, so episodes are built from tracking. 360 frames are single instants.
+
+**Still open in 1.10:** negation over intervals ("never" or "no ... during"), and repetition (open questions above).
+
+### 1.11 PlayerSet **[PROPOSED, to be approved]**
+
+A **player set** is a team's players as seen in one frame, used for counting and quantifying ("at least three of our players ahead of the ball").
+
+```
+PlayerSet = { listed : [PlayerPos], unseen : int }       -- PlayerPos is defined in 1.5
+```
+
+`players(R, t)` (1.3) gives the players on the pitch. Evaluated against the frame at `t` it gives a `PlayerSet`: `listed` are the players with a position in the frame, and `unseen` is how many more are on the pitch but outside `seen` (always 0 on a tracking frame). In a 360 frame the listed players have no identity (1.3), only the actor is linked to a `Player`.
+
+Operations the corpus needs (written in section 2):
+- filter by a position condition: in a zone, ahead of or behind the ball, within a distance of a point;
+- drop the keeper (P23 "outfield players");
+- `count`, `exists`, `all`;
+- order by a coordinate and take the `n`-th ("last defender", "second-last defender, counting the keeper": P14, P30).
+
+Every operation follows the rule in 1.5. A filter that cannot tell whether an unseen player passes gives a count as a range, and `exists`, `all` and the comparison on the count come out true, false or unknown (D-027).
+- Why: the count in P01 and the shape tests in P08 and P09 are over sets of positions, not named players, and sets must carry what was not seen.
+- Rejected: a plain list of listed players (would silently treat unseen players as absent).
+
+`Role` (`US` or `OPP`) is already defined in 1.2 and needs no section of its own. Roles inside a pattern such as "the passer" are pattern variables bound to events (section 3).
 
 ## 2. Type system
 
@@ -413,3 +581,68 @@ Template:
 - **Decision:** an event field is in one of three states. It has a value; it is **none** (does not apply, e.g. the recipient of a failed pass), so a condition on it is false; or it is **unknown** (the source should have it but does not, e.g. a missing location), so a condition on it is unknown.
 - **Why:** a failed pass is recorded data, not missing data. In the IDSSE sample, completed passes carry a `Recipient` and unsuccessful ones do not. Treating that as unknown would wrongly turn real results into "possible".
 - **Status:** agreed Kieran for now; team not yet confirmed. May change once the visible-area question (open) is settled.
+
+### D-023: One frame shape for 360 freeze frames and tracking frames (1.5)
+- **Decision:** both kinds share `kind`, `time`, `ball`, `seen` and `players`. 360 frames have `seen` = `visible_area`, tracking frames have the whole pitch.
+- **Why / forced by:** P01 ("three players ahead of the ball") must run on either source.
+- **Rejected:** two separate frame types (every pattern would be written twice).
+- **Status:** proposed, to be approved.
+
+### D-024: A frame is one instant; time-based state is built from frame sequences (1.5)
+- **Decision:** frames hold positions only. Velocity, runs and compactness collapsing are defined over sequences of frames in sections 2 and 4.
+- **Why:** the program document needs interval-valued state; frames already form the sequence.
+- **Rejected:** storing intervals or velocities in the frame.
+- **Status:** proposed, to be approved.
+
+### D-025: Speed and acceleration are computed from positions (1.5)
+- **Decision:** the language computes `speed` itself, the same on IDSSE and Metrica. IDSSE's per-frame values are optional extras used only for checking.
+- **Why:** one meaning across sources, and something independent to check against (D-001).
+- **Rejected:** using the provider's values in the language.
+- **Open:** the time step used for the difference (section 2).
+- **Status:** proposed, to be approved.
+
+### D-026: 360 frames inherit their event's time and ball position (1.5)
+- **Decision:** a freeze frame takes the time of its event (1.7) and puts the ball at the event's `location`.
+- **Why:** the freeze frame has neither.
+- **Consequence:** an approximation for "ahead of the ball" patterns on StatsBomb (P01).
+- **Status:** proposed, to be approved. Ball entry to verify when `data/` is restored.
+
+### D-027: Unseen players: a condition is true, false or unknown by trying every placement (1.5)
+- **Decision:** the unseen players of a team are those on the pitch (1.3) but not listed in the frame. A condition is true if it holds for every way of placing them outside `seen`, false if for none, and unknown otherwise. Conditions combine with three-valued AND, OR and NOT. Counts and order measures are computed as a lowest and highest possible value. A missing frame means `seen` is empty.
+- **Why / forced by:** P08, P09, P16, P17, P19 and P24 all say that players outside the visible area make the answer unknown or a range.
+- **Rejected:** unknown whenever the region touches outside `seen`; guessing where unseen players are.
+- **Cost:** can give unknown where the exact answer is definite (shared unseen players across conditions); never a wrong true or false.
+- **To verify:** the 360 list is complete inside the visible area (needs `data/`).
+- **Status:** proposed, to be approved.
+
+### D-028: Possession is defined by the language from controlling events (1.8)
+- **Decision:** a possession starts at the first controlling event (pass, cross, shot, set-piece restart, recovery) by a team that did not hold the ball, continues through non-controlling events, and ends before the other team's next controlling event or at the end of the period. Dead-ball stops do not end it. The provider's possession is kept as an optional extra for diagnosis.
+- **Why / forced by:** P02 must be rebuilt from raw primitives; IDSSE events have no possession (to verify).
+- **Rejected:** the provider's possession as the definition.
+- **To hand-check:** shots, clearances, keeper saves.
+- **Status:** proposed, to be approved.
+
+### D-029: Patterns do not reset on possession change; scoping is opt-in (1.8)
+- **Decision:** `within possession` confines matched events to one possession. Without it, a pattern may cross changes.
+- **Why / forced by:** P01 and P02 cross a change by design; P10, P11, P13, P20, P32 ask for the scope.
+- **Rejected:** reset on every change; never scoping.
+- **Status:** proposed, to be approved.
+
+### D-030: Zones are named canonical regions seen from a stated role (1.9)
+- **Decision:** a zone is written `Name@R` (`@US` default). `@OPP` mirrors x and y. The library has thirds, halves and lateral thirds with placeholder numbers, and the author can define polygons.
+- **Why / forced by:** P01 (`LeftBuildupThird` on an opponent pass), P03, P11, P12, P16, P22.
+- **Rejected:** names fixed to the `US` view; a view chosen silently from the event's team.
+- **Status:** proposed, to be approved. Numbers to review.
+
+### D-031: An interval is a closed stretch inside one period; state gives definite and possible intervals (1.10)
+- **Decision:** `Interval = (period, start, end)`. A condition evaluated per frame gives definite intervals (true frames) and possible intervals (true or unknown frames). "Throughout" is true, false or unknown by the frames in it.
+- **Why / forced by:** P05, P08, P14, P28 and the program document's interval semantics.
+- **Rejected:** open or half-open ends (frame spacing is fixed, so a closed interval is simpler to state).
+- **Open:** negation over intervals, repetition.
+- **Status:** proposed, to be approved.
+
+### D-032: A PlayerSet is the listed players plus a count of unseen players (1.11)
+- **Decision:** `PlayerSet = { listed, unseen }`, made by evaluating `players(R, t)` against the frame at `t`. Counts, quantifiers and order operations follow D-027.
+- **Why / forced by:** P01, P08, P09, P23, P30.
+- **Rejected:** a plain list of listed players.
+- **Status:** proposed, to be approved.
